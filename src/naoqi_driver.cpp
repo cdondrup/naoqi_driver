@@ -582,6 +582,7 @@ void Driver::registerDefaultConverter()
 
   bool bumper_enabled                 = boot_config_.get( "converters.bumper.enabled", true);
   bool tactile_enabled                = boot_config_.get( "converters.tactile.enabled", true);
+  bool face_enabled                   = boot_config_.get( "converters.face.enabled", true);
   bool people_enabled                 = boot_config_.get( "converters.people.enabled", true);
   /*
    * The info converter will be called once after it was added to the priority queue. Once it is its turn to be called, its
@@ -807,7 +808,7 @@ void Driver::registerDefaultConverter()
   }
 
   /** PEOPLE **/
-  if ( people_enabled )
+  if ( face_enabled )
   {
     std::vector<std::string> people_events;
     people_events.push_back("FaceDetected");
@@ -825,8 +826,8 @@ void Driver::registerDefaultConverter()
   {
     std::vector<std::string> people_events;
     people_events.push_back("PeoplePerception/PeopleDetected");
-    boost::shared_ptr<PersonDetectedEventRegister> event_register =
-      boost::make_shared<PersonDetectedEventRegister>( "people_detected", people_events, 0, sessionPtr_ );
+    boost::shared_ptr<PersonCharacteristicsEventRegister> event_register =
+      boost::make_shared<PersonCharacteristicsEventRegister>( "people_detected", people_events, 0, sessionPtr_ );
     insertEventConverter("people_detected", event_register);
     if (keep_looping) {
       event_map_.find("people_detected")->second.startProcess();
