@@ -20,6 +20,7 @@ set(
   src/converters/memory/string.cpp
   src/converters/sonar.cpp
   src/converters/log.cpp
+  src/converters/battery.cpp
   )
 set(
   TOOLS_SRC

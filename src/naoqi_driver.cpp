@@ -40,6 +40,7 @@
 #include "converters/memory/int.hpp"
 #include "converters/memory/string.hpp"
 #include "converters/log.hpp"
+#include "converters/battery.hpp"
 
 /*
  * PUBLISHERS
@@ -579,6 +580,9 @@ void Driver::registerDefaultConverter()
 
   bool sonar_enabled                  = boot_config_.get( "converters.sonar.enabled", true);
   size_t sonar_frequency              = boot_config_.get( "converters.sonar.frequency", 10);
+  
+  bool battery_enabled                = boot_config_.get( "converters.battery.enabled", true);
+  size_t battery_frequency            = boot_config_.get( "converters.battery.frequency", 10);
 
   bool bumper_enabled                 = boot_config_.get( "converters.bumper.enabled", true);
   bool tactile_enabled                = boot_config_.get( "converters.tactile.enabled", true);
@@ -754,6 +758,19 @@ void Driver::registerDefaultConverter()
     usc->registerCallback( message_actions::RECORD, boost::bind(&recorder::SonarRecorder::write, usr, _1) );
     usc->registerCallback( message_actions::LOG, boost::bind(&recorder::SonarRecorder::bufferize, usr, _1) );
     registerConverter( usc, usp, usr );
+  }
+  
+  if(robot_ == robot::PEPPER) {
+      if ( battery_enabled )
+      {
+        boost::shared_ptr<publisher::BasicPublisher<nao_interaction_msgs::BatteryInfo> > bp = boost::make_shared<publisher::BasicPublisher<nao_interaction_msgs::BatteryInfo> >( "battery" );
+        boost::shared_ptr<recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo> > br = boost::make_shared<recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo> >( "battery" );
+        boost::shared_ptr<converter::BatteryConverter> bc = boost::make_shared<converter::BatteryConverter>( "battery", battery_frequency, sessionPtr_ );
+        bc->registerCallback( message_actions::PUBLISH, boost::bind(&publisher::BasicPublisher<nao_interaction_msgs::BatteryInfo>::publish, bp, _1) );
+        bc->registerCallback( message_actions::RECORD, boost::bind(&recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo>::write, br, _1) );
+        bc->registerCallback( message_actions::LOG, boost::bind(&recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo>::bufferize, br, _1) );
+        registerConverter( bc, bp, br );
+      }
   }
 
   if ( audio_enabled ) {
