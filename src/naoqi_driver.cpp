@@ -40,6 +40,8 @@
 #include "converters/memory/int.hpp"
 #include "converters/memory/string.hpp"
 #include "converters/log.hpp"
+#include "converters/battery.hpp"
+#include "converters/odom.hpp"
 
 /*
  * PUBLISHERS
@@ -63,7 +65,8 @@
 #include "subscribers/teleop.hpp"
 #include "subscribers/moveto.hpp"
 #include "subscribers/speech.hpp"
-
+#include "subscribers/animated_speech.hpp"
+#include "subscribers/play_animation.hpp"
 
 /*
  * SERVICES
@@ -579,9 +582,16 @@ void Driver::registerDefaultConverter()
 
   bool sonar_enabled                  = boot_config_.get( "converters.sonar.enabled", true);
   size_t sonar_frequency              = boot_config_.get( "converters.sonar.frequency", 10);
+  
+  bool battery_enabled                = boot_config_.get( "converters.battery.enabled", true);
+  size_t battery_frequency            = boot_config_.get( "converters.battery.frequency", 10);
+
+  bool odom_enabled                  = boot_config_.get( "converters.odom.enabled", true);
+  size_t odom_frequency              = boot_config_.get( "converters.odom.frequency", 10);
 
   bool bumper_enabled                 = boot_config_.get( "converters.bumper.enabled", true);
   bool tactile_enabled                = boot_config_.get( "converters.tactile.enabled", true);
+  bool face_enabled                   = boot_config_.get( "converters.face.enabled", true);
   bool people_enabled                 = boot_config_.get( "converters.people.enabled", true);
   /*
    * The info converter will be called once after it was added to the priority queue. Once it is its turn to be called, its
@@ -754,6 +764,31 @@ void Driver::registerDefaultConverter()
     usc->registerCallback( message_actions::LOG, boost::bind(&recorder::SonarRecorder::bufferize, usr, _1) );
     registerConverter( usc, usp, usr );
   }
+  
+  if(robot_ == robot::PEPPER) {
+      if ( battery_enabled )
+      {
+        boost::shared_ptr<publisher::BasicPublisher<nao_interaction_msgs::BatteryInfo> > bp = boost::make_shared<publisher::BasicPublisher<nao_interaction_msgs::BatteryInfo> >( "battery" );
+        boost::shared_ptr<recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo> > br = boost::make_shared<recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo> >( "battery" );
+        boost::shared_ptr<converter::BatteryConverter> bc = boost::make_shared<converter::BatteryConverter>( "battery", battery_frequency, sessionPtr_ );
+        bc->registerCallback( message_actions::PUBLISH, boost::bind(&publisher::BasicPublisher<nao_interaction_msgs::BatteryInfo>::publish, bp, _1) );
+        bc->registerCallback( message_actions::RECORD, boost::bind(&recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo>::write, br, _1) );
+        bc->registerCallback( message_actions::LOG, boost::bind(&recorder::BasicRecorder<nao_interaction_msgs::BatteryInfo>::bufferize, br, _1) );
+        registerConverter( bc, bp, br );
+      }
+  }
+  
+  /** Odom */
+    if ( odom_enabled )
+    {
+      boost::shared_ptr<publisher::BasicPublisher<nav_msgs::Odometry> > lp = boost::make_shared<publisher::BasicPublisher<nav_msgs::Odometry> >( "odom" );
+      boost::shared_ptr<recorder::BasicRecorder<nav_msgs::Odometry> > lr = boost::make_shared<recorder::BasicRecorder<nav_msgs::Odometry> >( "odom" );
+      boost::shared_ptr<converter::OdomConverter> lc = boost::make_shared<converter::OdomConverter>( "odom", odom_frequency, sessionPtr_ );
+      lc->registerCallback( message_actions::PUBLISH, boost::bind(&publisher::BasicPublisher<nav_msgs::Odometry>::publish, lp, _1) );
+      lc->registerCallback( message_actions::RECORD, boost::bind(&recorder::BasicRecorder<nav_msgs::Odometry>::write, lr, _1) );
+      lc->registerCallback( message_actions::LOG, boost::bind(&recorder::BasicRecorder<nav_msgs::Odometry>::bufferize, lr, _1) );
+      registerConverter( lc, lp, lr );
+    }
 
   if ( audio_enabled ) {
     /** Audio */
@@ -807,7 +842,7 @@ void Driver::registerDefaultConverter()
   }
 
   /** PEOPLE **/
-  if ( people_enabled )
+  if ( face_enabled )
   {
     std::vector<std::string> people_events;
     people_events.push_back("FaceDetected");
@@ -819,6 +854,20 @@ void Driver::registerDefaultConverter()
     }
     if (publish_enabled_) {
       event_map_.find("face_detected")->second.isPublishing(true);
+    }
+  }
+  if ( people_enabled )
+  {
+    std::vector<std::string> people_events;
+    people_events.push_back("PeoplePerception/PeopleDetected");
+    boost::shared_ptr<PersonDetectedEventRegister> event_register =
+      boost::make_shared<PersonDetectedEventRegister>( "people_detected", people_events, 0, sessionPtr_ );
+    insertEventConverter("people_detected", event_register);
+    if (keep_looping) {
+      event_map_.find("people_detected")->second.startProcess();
+    }
+    if (publish_enabled_) {
+      event_map_.find("people_detected")->second.isPublishing(true);
     }
   }
 }
@@ -852,6 +901,8 @@ void Driver::registerDefaultSubscriber()
   registerSubscriber( boost::make_shared<naoqi::subscriber::TeleopSubscriber>("teleop", "/cmd_vel", "/joint_angles", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::MovetoSubscriber>("moveto", "/move_base_simple/goal", sessionPtr_, tf2_buffer_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::SpeechSubscriber>("speech", "/speech", sessionPtr_) );
+  registerSubscriber( boost::make_shared<naoqi::subscriber::AnimatedSpeechSubscriber>("animated_speech", "/animated_speech", sessionPtr_) );
+  registerSubscriber( boost::make_shared<naoqi::subscriber::PlayAnimationSubscriber>("play_animation", "/play_animation", sessionPtr_) );
 }
 
 void Driver::registerService( service::Service srv )

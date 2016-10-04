@@ -584,7 +584,7 @@ NaoqiFaceDetected fromAnyValueToNaoqiFaceDetected(qi::AnyValue& value){
   qi::AnyReference ref;
 
   if ( anyref.size() != 5 ) {
-    return result;
+    throw std::runtime_error("AnyValue does not have the expected size to be transformed to face detected");
   }
   /** TimeStamp_ **/
   ref = anyref[0].content();
@@ -610,7 +610,7 @@ NaoqiFaceDetected fromAnyValueToNaoqiFaceDetected(qi::AnyValue& value){
 
   //CameraPose_InTorsoFrame,
   ref = anyref[2].content();
-  for (int i = 0; i < 6; i++ ){
+  for (int i = 0; i < ref.size(); i++ ){
     if(ref[i].content().kind() == qi::TypeKind_Float)
     {
       result.camera_pose_in_torso_frame[i] = ref[i].content().asFloat();
@@ -623,7 +623,7 @@ NaoqiFaceDetected fromAnyValueToNaoqiFaceDetected(qi::AnyValue& value){
   }
   //CameraPose_InRobotFrame,
   ref = anyref[3].content();
-  for (int i = 0; i < 6; i++ ){
+  for (int i = 0; i < ref.size(); i++ ){
     if(ref[i].content().kind() == qi::TypeKind_Float)
     {
       result.camera_pose_in_robot_frame[i] = ref[i].content().asFloat();
@@ -647,6 +647,137 @@ NaoqiFaceDetected fromAnyValueToNaoqiFaceDetected(qi::AnyValue& value){
   }
 
   return result;
+}
+
+NaoqiPersonInfo fromAnyValueToPersonInfo(qi::AnyReference& anyrefs, NaoqiPersonInfo& result){
+  qi::AnyReference ref;
+  std::ostringstream ss;
+  
+  ref = anyrefs[0].content();
+  if(ref.kind() == qi::TypeKind_Int)
+  {
+    result.id = ref.asInt32();
+  }
+  else
+  {
+    ss << "Could not retrieve id";
+    throw std::runtime_error(ss.str());
+  }
+  
+  ref = anyrefs[1].content();
+  if(ref.kind() == qi::TypeKind_Float)
+  {
+    result.distance_to_camera = ref.asFloat();
+  }
+  else
+  {
+    ss << "Could not retrieve distance";
+    throw std::runtime_error(ss.str());
+  }
+  
+  ref = anyrefs[2].content();
+  if(ref.kind() == qi::TypeKind_Float)
+  {
+    result.pitch_angle_in_image = ref.asFloat();
+  }
+  else
+  {
+    ss << "Could not retrieve pitch";
+    throw std::runtime_error(ss.str());
+  }
+  
+  ref = anyrefs[3].content();
+  if(ref.kind() == qi::TypeKind_Float)
+  {
+    result.yaw_angle_in_image = ref.asFloat();
+  }
+  else
+  {
+    ss << "Could not retrieve yaw";
+    throw std::runtime_error(ss.str());
+  }
+
+  return result;
+}
+
+NaoqiPersonDetected fromAnyValueToNaoqiPersonDetected(qi::AnyValue& value) {
+    qi::AnyReferenceVector anyref;
+    NaoqiPersonDetected result;
+    std::ostringstream ss;
+    try{
+      anyref = value.asListValuePtr();
+    }
+    catch(std::runtime_error& e)
+    {
+      ss << "Could not transform AnyValue into list: " << e.what();
+      throw std::runtime_error(ss.str());
+    }
+    qi::AnyReference ref;
+  
+    if ( anyref.size() != 5 ) {
+      throw std::runtime_error("AnyValue does not have the expected size to be transformed to person detected");
+    }
+    /** TimeStamp_ **/
+    ref = anyref[0].content();
+    if(ref.kind() == qi::TypeKind_List)
+    {
+      result.timestamp = fromAnyValueToTimeStamp(ref, result.timestamp);
+    }
+    else
+    {
+      ss << "Could not retrieve timestamp";
+      throw std::runtime_error(ss.str());
+    }
+  
+    qi::AnyReferenceVector vec;
+    vec = anyref[1].asListValuePtr(); // FaceInfo[N]
+    for(int i = 0; i < vec.size(); i++) // N
+    {
+      qi::AnyReference ref2 = vec[i].content();
+      struct NaoqiPersonInfo person_info;
+      person_info = fromAnyValueToPersonInfo(ref2, person_info);
+      result.person_info.push_back(person_info);
+    }
+    
+    //CameraPose_InTorsoFrame,
+    ref = anyref[2].content();
+    for (int i = 0; i < ref.size(); i++ ){
+      if(ref[i].content().kind() == qi::TypeKind_Float)
+      {
+        result.camera_pose_in_torso_frame[i] = ref[i].content().asFloat();
+      }
+      else
+      {
+        ss << "Could not retrieve Position6D";
+        throw std::runtime_error(ss.str());
+      }
+    }
+    //CameraPose_InRobotFrame,
+    ref = anyref[3].content();
+    for (int i = 0; i < ref.size(); i++ ){
+      if(ref[i].content().kind() == qi::TypeKind_Float)
+      {
+        result.camera_pose_in_robot_frame[i] = ref[i].content().asFloat();
+      }
+      else
+      {
+        ss << "Could not retrieve Position6D";
+        throw std::runtime_error(ss.str());
+      }
+    }
+    //Camera_Id
+    ref = anyref[4].content();
+    if(ref.kind() == qi::TypeKind_Int)
+    {
+      result.camera_id = ref.asInt32();
+    }
+    else
+    {
+      ss << "Could not retrieve timestamp_us";
+      throw std::runtime_error(ss.str());
+    }
+  
+    return result;
 }
 
 std::vector<float> fromAnyValueToFloatVector(qi::AnyValue& value, std::vector<float>& result){

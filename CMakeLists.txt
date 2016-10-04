@@ -20,6 +20,8 @@ set(
   src/converters/memory/string.cpp
   src/converters/sonar.cpp
   src/converters/log.cpp
+  src/converters/battery.cpp
+  src/converters/odom.cpp
   )
 set(
   TOOLS_SRC
@@ -41,6 +43,8 @@ set(
   src/subscribers/teleop.cpp
   src/subscribers/moveto.cpp
   src/subscribers/speech.cpp
+  src/subscribers/animated_speech.cpp
+  src/subscribers/play_animation.cpp
   )
 
 set(

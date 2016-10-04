@@ -27,6 +27,7 @@
 #include <naoqi_driver/recorder/globalrecorder.hpp>
 #include <naoqi_driver/message_actions.h>
 #include "../tools/from_any_value.hpp"
+#include <typeinfo>
 
 #include "people.hpp"
 
@@ -42,12 +43,28 @@ template<class T>
 PeopleEventRegister<T>::PeopleEventRegister( const std::string& name, const std::vector<std::string> keys, const float& frequency, const qi::SessionPtr& session )
   : serviceId(0),
     p_memory_( session->service("ALMemory")),
+    p_people_( session->service("ALPeoplePerception") ),
+    p_gaze_( session->service("ALGazeAnalysis") ),
+    p_face_( session->service("ALFaceCharacteristics") ),
+    p_waving_( session->service("ALWavingDetection") ),
     session_(session),
     isStarted_(false),
     isPublishing_(false),
     isRecording_(false),
-    isDumping_(false)
+    isDumping_(false),
+    prefix("PeoplePerception/Person/")
 {
+  memory_keys.push_back("/IsFaceDetected");
+  memory_keys.push_back("/IsWaving");
+  memory_keys.push_back("/GazeDirection");
+  memory_keys.push_back("/HeadAngles");
+  memory_keys.push_back("/IsLookingAtRobot");
+  memory_keys.push_back("/LookingAtRobotScore");
+  memory_keys.push_back("/AgeProperties");
+  memory_keys.push_back("/GenderProperties");
+  memory_keys.push_back("/SmileProperties");
+  memory_keys.push_back("/ExpressionProperties");
+  
   publisher_ = boost::make_shared<publisher::BasicPublisher<T> >( name );
   //recorder_ = boost::make_shared<recorder::BasicEventRecorder<T> >( name );
   converter_ = boost::make_shared<converter::PeopleEventConverter<T> >( name, frequency, session );
@@ -97,6 +114,16 @@ void PeopleEventRegister<T>::startProcess()
         std::cerr << *it << std::endl;
         p_memory_.call<void>("subscribeToEvent",it->c_str(), serviceName, "peopleCallback");
       }
+      if(keys_[0].compare("PeoplePerception/PeopleDetected")==0) {
+          std::cout<<serviceName<<" -> People : Start"<<std::endl;
+          p_people_.call<void>("subscribe", "ROS");
+          std::cout<<serviceName<<" -> Gaze : Start"<<std::endl;
+          p_gaze_.call<void>("subscribe", "ROS");
+          std::cout<<serviceName<<" -> Face : Start"<<std::endl;
+          p_face_.call<void>("subscribe", "ROS");
+          std::cout<<serviceName<<" -> Waving : Start"<<std::endl;
+          p_waving_.call<void>("subscribe", "ROS");
+      }
       std::cout << serviceName << " : Start" << std::endl;
     }
     isStarted_ = true;
@@ -112,7 +139,19 @@ void PeopleEventRegister<T>::stopProcess()
     //std::string serviceName = std::string("ROS-Driver-") + typeid(T).name();
     std::string serviceName = std::string("ROS-Driver-") + keys_[0];
     if(serviceId){
-      p_memory_.call<void>("unsubscribeToEvent", serviceName, "peopleCallback");
+      if(keys_[0].compare("PeoplePerception/PeopleDetected")==0) {
+          std::cout<<serviceName<<" -> People : Stop"<<std::endl;
+          p_people_.call<void>("unsubscribe", "ROS");
+          std::cout<<serviceName<<" -> Gaze : Stop"<<std::endl;
+          p_gaze_.call<void>("unsubscribe", "ROS");
+          std::cout<<serviceName<<" -> Face : Stop"<<std::endl;
+          p_face_.call<void>("unsubscribe", "ROS");
+          std::cout<<serviceName<<" -> Waving : Stop"<<std::endl;
+          p_waving_.call<void>("unsubscribe", "ROS");
+      }
+      for(std::vector<std::string>::const_iterator it = keys_.begin(); it != keys_.end(); ++it) {
+        p_memory_.call<void>("unsubscribeToEvent",it->c_str(), serviceName);
+      }
       session_->unregisterService(serviceId);
       serviceId = 0;
     }
@@ -171,20 +210,8 @@ template<class T>
 void PeopleEventRegister<T>::peopleCallback(std::string &key, qi::AnyValue &value, qi::AnyValue &message)
 {
   T msg = T();
-  
-  tools::NaoqiFaceDetected faces;
-  try {
-    faces = tools::fromAnyValueToNaoqiFaceDetected(value);
-  }
-  catch(std::runtime_error& e)
-  {
-    std::cout << "Cannot retrieve facedetect" << std::endl;
-    return;
-  }
 
-  if ( faces.face_info.size() > 0 ) { // sometimes value does not have face information..
-    peopleCallbackMessage(key, faces, msg);
-  }
+  peopleCallbackMessage(key, value, msg);
 
   std::vector<message_actions::MessageAction> actions;
   boost::mutex::scoped_lock callback_lock(mutex_);
@@ -212,52 +239,284 @@ void PeopleEventRegister<T>::peopleCallback(std::string &key, qi::AnyValue &valu
 }
 
 template<class T>
-void PeopleEventRegister<T>::peopleCallbackMessage(std::string &key, tools::NaoqiFaceDetected &faces, nao_interaction_msgs::FaceDetected &msg)
+void PeopleEventRegister<T>::peopleCallbackMessage(std::string &key, qi::AnyValue &value, nao_interaction_msgs::FaceDetectedArray &msg)
 {
-  msg.header.frame_id = "";
-  msg.header.stamp = ros::Time(faces.timestamp.timestamp_s, faces.timestamp.timestamp_us);
+  tools::NaoqiFaceDetected faces;
+  try {
+    faces = tools::fromAnyValueToNaoqiFaceDetected(value);
+  }
+  catch(std::runtime_error& e)
+  {
+    ROS_DEBUG_STREAM("Cannot retrieve facedetect: " << e.what());
+    return;
+  }
+  if ( faces.face_info.size() == 0 ) return;
+  
+  msg.header.frame_id = "CameraTop_optical_frame";
+  msg.header.stamp = ros::Time::now();
 
-  if ( faces.face_info.size() > 0 ) {
-    msg.face_id.data = faces.face_info[0].extra_info[0].face_id;
-    msg.score_reco.data = faces.face_info[0].extra_info[0].score_reco;
-    msg.face_label.data = faces.face_info[0].extra_info[0].face_label;
+  for(int i = 0; i < faces.face_info.size(); i++) {
+    nao_interaction_msgs::FaceDetected face;
+    face.header = msg.header;
+    face.face_id.data = faces.face_info[i].extra_info[0].face_id;
+    face.score_reco.data = faces.face_info[i].extra_info[0].score_reco;
+    face.face_label.data = faces.face_info[i].extra_info[0].face_label;
 
-    msg.shape_alpha.data = faces.face_info[0].shape_info.alpha;
-    msg.shape_beta.data  = faces.face_info[0].shape_info.beta;
-    msg.shape_sizeX.data = faces.face_info[0].shape_info.sizeX;
-    msg.shape_sizeY.data = faces.face_info[0].shape_info.sizeY;
+    face.shape_alpha.data = faces.face_info[i].shape_info.alpha;
+    face.shape_beta.data  = faces.face_info[i].shape_info.beta;
+    face.shape_sizeX.data = faces.face_info[i].shape_info.sizeX;
+    face.shape_sizeY.data = faces.face_info[i].shape_info.sizeY;
 
-    msg.right_eye_eyeCenter_x.data = faces.face_info[0].extra_info[0].right_eye_points.eye_center_x;
-    msg.right_eye_eyeCenter_y.data = faces.face_info[0].extra_info[0].right_eye_points.eye_center_y;
-    msg.right_eye_noseSideLimit_x.data = faces.face_info[0].extra_info[0].right_eye_points.nose_side_limit_x;
-    msg.right_eye_noseSideLimit_y.data = faces.face_info[0].extra_info[0].right_eye_points.nose_side_limit_y;
-    msg.right_eye_earSideLimit_x.data = faces.face_info[0].extra_info[0].right_eye_points.ear_side_limit_x;
-    msg.right_eye_earSideLimit_y.data = faces.face_info[0].extra_info[0].right_eye_points.ear_side_limit_y;
+    face.right_eye_eyeCenter_x.data = faces.face_info[i].extra_info[0].right_eye_points.eye_center_x;
+    face.right_eye_eyeCenter_y.data = faces.face_info[i].extra_info[0].right_eye_points.eye_center_y;
+    face.right_eye_noseSideLimit_x.data = faces.face_info[i].extra_info[0].right_eye_points.nose_side_limit_x;
+    face.right_eye_noseSideLimit_y.data = faces.face_info[i].extra_info[0].right_eye_points.nose_side_limit_y;
+    face.right_eye_earSideLimit_x.data = faces.face_info[i].extra_info[0].right_eye_points.ear_side_limit_x;
+    face.right_eye_earSideLimit_y.data = faces.face_info[i].extra_info[0].right_eye_points.ear_side_limit_y;
 
-    msg.left_eye_eyeCenter_x.data = faces.face_info[0].extra_info[0].left_eye_points.eye_center_x;
-    msg.left_eye_eyeCenter_y.data = faces.face_info[0].extra_info[0].left_eye_points.eye_center_y;
-    msg.left_eye_noseSideLimit_x.data = faces.face_info[0].extra_info[0].left_eye_points.nose_side_limit_x;
-    msg.left_eye_noseSideLimit_y.data = faces.face_info[0].extra_info[0].left_eye_points.nose_side_limit_y;
-    msg.left_eye_earSideLimit_x.data = faces.face_info[0].extra_info[0].left_eye_points.ear_side_limit_x;
-    msg.left_eye_earSideLimit_y.data = faces.face_info[0].extra_info[0].left_eye_points.ear_side_limit_y;
+    face.left_eye_eyeCenter_x.data = faces.face_info[i].extra_info[0].left_eye_points.eye_center_x;
+    face.left_eye_eyeCenter_y.data = faces.face_info[i].extra_info[0].left_eye_points.eye_center_y;
+    face.left_eye_noseSideLimit_x.data = faces.face_info[i].extra_info[0].left_eye_points.nose_side_limit_x;
+    face.left_eye_noseSideLimit_y.data = faces.face_info[i].extra_info[0].left_eye_points.nose_side_limit_y;
+    face.left_eye_earSideLimit_x.data = faces.face_info[i].extra_info[0].left_eye_points.ear_side_limit_x;
+    face.left_eye_earSideLimit_y.data = faces.face_info[i].extra_info[0].left_eye_points.ear_side_limit_y;
 
-    msg.nose_bottomCenterLimit_x.data = faces.face_info[0].extra_info[0].nose_points.bottom_center_limit_x;
-    msg.nose_bottomCenterLimit_y.data = faces.face_info[0].extra_info[0].nose_points.bottom_center_limit_y;
-    msg.nose_bottomLeftLimit_x.data = faces.face_info[0].extra_info[0].nose_points.bottom_left_limit_x;
-    msg.nose_bottomLeftLimit_y.data = faces.face_info[0].extra_info[0].nose_points.bottom_left_limit_y;
-    msg.nose_bottomRightLimit_x.data = faces.face_info[0].extra_info[0].nose_points.bottom_right_limit_x;
-    msg.nose_bottomRightLimit_y.data = faces.face_info[0].extra_info[0].nose_points.bottom_right_limit_y;
+    face.nose_bottomCenterLimit_x.data = faces.face_info[i].extra_info[0].nose_points.bottom_center_limit_x;
+    face.nose_bottomCenterLimit_y.data = faces.face_info[i].extra_info[0].nose_points.bottom_center_limit_y;
+    face.nose_bottomLeftLimit_x.data = faces.face_info[i].extra_info[0].nose_points.bottom_left_limit_x;
+    face.nose_bottomLeftLimit_y.data = faces.face_info[i].extra_info[0].nose_points.bottom_left_limit_y;
+    face.nose_bottomRightLimit_x.data = faces.face_info[i].extra_info[0].nose_points.bottom_right_limit_x;
+    face.nose_bottomRightLimit_y.data = faces.face_info[i].extra_info[0].nose_points.bottom_right_limit_y;
 
-    msg.mouth_leftLimit_x.data = faces.face_info[0].extra_info[0].mouth_points.left_limit_x;
-    msg.mouth_leftLimit_y.data = faces.face_info[0].extra_info[0].mouth_points.left_limit_y;
-    msg.mouth_rightLimit_x.data = faces.face_info[0].extra_info[0].mouth_points.right_limit_x;
-    msg.mouth_rightLimit_y.data = faces.face_info[0].extra_info[0].mouth_points.right_limit_y;
-    msg.mouth_topLimit_x.data = faces.face_info[0].extra_info[0].mouth_points.top_limit_x;
-    msg.mouth_topLimit_y.data = faces.face_info[0].extra_info[0].mouth_points.top_limit_y;
+    face.mouth_leftLimit_x.data = faces.face_info[i].extra_info[0].mouth_points.left_limit_x;
+    face.mouth_leftLimit_y.data = faces.face_info[i].extra_info[0].mouth_points.left_limit_y;
+    face.mouth_rightLimit_x.data = faces.face_info[i].extra_info[0].mouth_points.right_limit_x;
+    face.mouth_rightLimit_y.data = faces.face_info[i].extra_info[0].mouth_points.right_limit_y;
+    face.mouth_topLimit_x.data = faces.face_info[i].extra_info[0].mouth_points.top_limit_x;
+    face.mouth_topLimit_y.data = faces.face_info[i].extra_info[0].mouth_points.top_limit_y;
+    
+    msg.face_array.push_back(face);
   }
 }
 
+template<class T>
+geometry_msgs::Point PeopleEventRegister<T>::toCartesian(float dist, float azi, float inc) {
+    geometry_msgs::Point p;
+    p.x = dist * std::sin(inc) * std::cos(azi) * (-1); // Inverted
+    p.y = dist * std::sin(inc) * std::sin(azi);
+    p.z = dist * std::cos(inc);
+    return p;
+}
+
+template<class T>
+void PeopleEventRegister<T>::peopleCallbackMessage(std::string &key, qi::AnyValue &value, nao_interaction_msgs::PersonDetectedArray &msg)
+{
+    tools::NaoqiPersonDetected people;
+    try {
+        people = tools::fromAnyValueToNaoqiPersonDetected(value);
+    }
+    catch(std::runtime_error& e)
+    {
+      ROS_DEBUG_STREAM("Cannot retrieve persondetected: " << e.what());
+      return;
+    }
+    
+    msg.header.frame_id = "CameraDepth_optical_frame";
+    msg.header.stamp = ros::Time::now();
+    
+    for(int i = 0; i < people.person_info.size(); i++) {
+        std::string sid = num_to_str<int>(people.person_info[i].id);
+        std::vector<std::string> keys;
+        for(int j = 0; j < memory_keys.size(); j++) {
+            keys.push_back(prefix+sid+memory_keys[j]);
+        }
+        
+        qi::AnyValue data = (qi::AnyValue)p_memory_.call<qi::AnyValue>("getListData", keys);
+        
+        nao_interaction_msgs::PersonDetected pd;
+        pd.face.gender = -1; // Since 0 = female, initialising as -1 to disambigute no data from femal.
+        
+        /* People Perception */
+        try {
+            pd.id = people.person_info[i].id;
+            pd.person.distance = people.person_info[i].distance_to_camera;
+            pd.person.yaw = people.person_info[i].yaw_angle_in_image;
+            pd.person.pitch = people.person_info[i].pitch_angle_in_image;
+            pd.person.position.position = toCartesian(pd.person.distance, pd.person.pitch, pd.person.yaw);
+            pd.person.position.orientation.w = 1.0;
+            
+            if(data.size() != keys.size()) {
+                msg.person_array.push_back(pd);
+                ROS_DEBUG("Could not retrieve any face information");
+                continue;
+            }
+            
+            try {
+                pd.person.face_detected = (bool)data[0].content().asInt32(); 
+            } catch(...) {
+                ROS_DEBUG("Error retreiving face detected");
+            }
+            
+            try {
+                pd.person.is_waving = (bool)data[1].content().asInt32();
+            } catch(...) {
+                ROS_DEBUG("Error retreiving if waving");
+            }
+            
+            if(pd.person.face_detected) {
+                /* Gaze Analysis */
+                try {
+                    qi::AnyReference gaze = data[2].content();
+                    if(gaze.kind() == qi::TypeKind_List && gaze.size() == 2)
+                    {
+                        qi::AnyReference g, yaw, pitch;
+                        yaw = gaze[0].content();
+                        pitch = gaze[1].content();
+                        if(yaw.kind() == qi::TypeKind_Float && pitch.kind() == qi::TypeKind_Float) {
+                            tf::Quaternion q;
+                            q.setRPY(0.0, pitch.asFloat(), yaw.asFloat());
+                            pd.gaze.gaze_angle.x = q.x();
+                            pd.gaze.gaze_angle.y = q.y();
+                            pd.gaze.gaze_angle.z = q.z();
+                            pd.gaze.gaze_angle.w = q.w();
+                        } else {
+                            ROS_DEBUG("Could not retrieve yaw/pitch");
+                        }
+                    } else {
+                        ROS_DEBUG("Could not retrieve gaze");
+                    }
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving gaze angle: " << e.what());
+                }
+                try {
+                    qi::AnyReference head_angle = data[3].content();
+                    if(head_angle.kind() == qi::TypeKind_List && head_angle.size() == 3)
+                    {
+                        qi::AnyReference yaw, pitch, roll;
+                        yaw = head_angle[0].content();
+                        pitch = head_angle[1].content();
+                        roll = head_angle[2].content();
+                        if(yaw.kind() == qi::TypeKind_Float && pitch.kind() == qi::TypeKind_Float && roll.kind() == qi::TypeKind_Float) {
+                            tf::Quaternion q;
+                            q.setRPY(roll.asFloat(), pitch.asFloat(), yaw.asFloat());
+                            pd.gaze.head_angle.x = q.x();
+                            pd.gaze.head_angle.y = q.y();
+                            pd.gaze.head_angle.z = q.z();
+                            pd.gaze.head_angle.w = q.w();
+                        } else {
+                            ROS_DEBUG("Could not retrieve yaw/pitch/roll");
+                        }
+                    } else {
+                        ROS_DEBUG("Could not retrieve head angle");
+                    }
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving head angle: " << e.what());
+                }
+                try {
+                    pd.gaze.looking_at_robot = (bool)data[4].content().asInt32();
+                    pd.gaze.looking_at_robot_score = data[5].content().asFloat();
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving looking at robot: " << e.what());
+                }
+                
+                /* Face Charcteristics */
+                try {
+                    qi::AnyReference age_props = data[6].content();
+                    if(age_props.kind() == qi::TypeKind_List && age_props.size() == 2)
+                    {
+                        qi::AnyReference age, conf;
+                        age = age_props[0].content();
+                        conf = age_props[1].content();
+                        if(age.kind() == qi::TypeKind_Float && conf.kind() == qi::TypeKind_Float) {
+                            pd.face.age = (int)age.asFloat();
+                            pd.face.age_confidence = conf.asFloat();
+                        } else {
+                            ROS_DEBUG("Could not retrieve age and confidence");
+                        }
+                    } else {
+                        ROS_DEBUG("Could not retrieve age");
+                    }
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving age: " << e.what());
+                }
+                try {
+                qi::AnyReference gender_props = data[7].content();
+                    if(gender_props.kind() == qi::TypeKind_List && gender_props.size() == 2)
+                    {
+                        qi::AnyReference gender, conf;
+                        gender = gender_props[0].content();
+                        conf = gender_props[1].content();
+                        if(gender.kind() == qi::TypeKind_Float && conf.kind() == qi::TypeKind_Float) {
+                            pd.face.gender = (int)gender.asFloat();
+                            pd.face.gender_confidence = conf.asFloat();
+                        } else {
+                            ROS_DEBUG("Could not retrieve gender and confidence");
+                        }
+                    } else {
+                        ROS_DEBUG("Could not retrieve gender");
+                    }
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving gender: " << e.what());
+                }
+                try {
+                    qi::AnyReference smile_props = data[8].content();
+                    if(smile_props.kind() == qi::TypeKind_List && smile_props.size() == 2)
+                    {
+                        qi::AnyReference smile_degree, conf;
+                        smile_degree = smile_props[0].content();
+                        conf = smile_props[1].content();
+                        if(smile_degree.kind() == qi::TypeKind_Float && conf.kind() == qi::TypeKind_Float) {
+                            pd.face.smile_degree = smile_degree.asFloat();
+                            pd.face.smile_degree_confidence = conf.asFloat();
+                        } else {
+                            ROS_DEBUG("Could not retrieve smile degree and confidence");
+                        }
+                    } else {
+                        ROS_DEBUG("Could not retrieve smile");
+                    }
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving smile: " << e.what());
+                }
+                try {
+                    qi::AnyReference expression_props = data[9].content();
+                    if(expression_props.kind() == qi::TypeKind_List && expression_props.size() == 5)
+                    {
+                        qi::AnyReference neutral, happy, surprised, angry, sad;
+                        neutral = expression_props[0].content();
+                        happy = expression_props[1].content();
+                        surprised = expression_props[2].content();
+                        angry = expression_props[3].content();
+                        sad = expression_props[4].content();
+                        if(neutral.kind() == qi::TypeKind_Float 
+                                && happy.kind() == qi::TypeKind_Float
+                                && surprised.kind() == qi::TypeKind_Float
+                                && angry.kind() == qi::TypeKind_Float
+                                && sad.kind() == qi::TypeKind_Float) {
+                            pd.face.expression_properties.neutral = neutral.asFloat();
+                            pd.face.expression_properties.happy = happy.asFloat();
+                            pd.face.expression_properties.surprised = surprised.asFloat();
+                            pd.face.expression_properties.angry = angry.asFloat();
+                            pd.face.expression_properties.sad = sad.asFloat();
+                        } else {
+                            ROS_DEBUG("Could not retrieve neutral/happy/surprised/angry/sad");
+                        }
+                    } else {
+                        ROS_DEBUG("Could not retrieve expression");
+                    }
+                } catch(std::runtime_error& e) {
+                    ROS_DEBUG_STREAM("Error retrieving expression: " << e.what());
+                }
+            }
+        } catch(std::runtime_error& e) {
+            ROS_DEBUG_STREAM("Error retrieving person information: " << e.what());
+        }
+        
+        msg.person_array.push_back(pd);
+    }
+}
+
 // http://stackoverflow.com/questions/8752837/undefined-reference-to-template-class-constructor
-template class PeopleEventRegister<nao_interaction_msgs::FaceDetected>;
+template class PeopleEventRegister<nao_interaction_msgs::FaceDetectedArray>;
+template class PeopleEventRegister<nao_interaction_msgs::PersonDetectedArray>;
 
 }//namespace

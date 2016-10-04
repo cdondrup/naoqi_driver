@@ -19,6 +19,7 @@
 #define PEOPLE_EVENT_REGISTER_HPP
 
 #include <string>
+#include <cmath>
 
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
@@ -28,7 +29,9 @@
 #include <qi/session.hpp>
 
 #include <ros/ros.h>
-#include <nao_interaction_msgs/FaceDetected.h>
+#include <nao_interaction_msgs/FaceDetectedArray.h>
+#include <nao_interaction_msgs/PersonDetectedArray.h>
+#include <tf/transform_datatypes.h>
 
 #include <naoqi_driver/tools.hpp>
 #include <naoqi_driver/recorder/globalrecorder.hpp>
@@ -79,13 +82,20 @@ public:
   void isDumping(bool state);
 
   void peopleCallback(std::string &key, qi::AnyValue &value, qi::AnyValue &message);
-  void peopleCallbackMessage(std::string &key, tools::NaoqiFaceDetected &faces, nao_interaction_msgs::FaceDetected &msg);
-  
+  void peopleCallbackMessage(std::string &key, qi::AnyValue &value, nao_interaction_msgs::FaceDetectedArray &msg);
+  void peopleCallbackMessage(std::string &key, qi::AnyValue &value, nao_interaction_msgs::PersonDetectedArray &msg);
 
 private:
   void registerCallback();
   void unregisterCallback();
   void onEvent();
+  geometry_msgs::Point toCartesian(float dist, float azi, float inc);
+  template<typename N>
+      std::string num_to_str(N num) {
+          std::stringstream ss;
+          ss << num;
+          return ss.str();
+      }
 
 private:
   boost::shared_ptr<converter::PeopleEventConverter<T> > converter_;
@@ -93,7 +103,7 @@ private:
   //boost::shared_ptr<recorder::BasicEventRecorder<T> > recorder_;
 
   qi::SessionPtr session_;
-  qi::AnyObject p_memory_;
+  qi::AnyObject p_memory_, p_people_, p_gaze_, p_face_, p_waving_;
   unsigned int serviceId;
   std::string name_;
 
@@ -103,27 +113,45 @@ private:
   bool isPublishing_;
   bool isRecording_;
   bool isDumping_;
+  
+  std::string prefix;
+  std::vector<std::string> memory_keys;
 
 protected:
   std::vector<std::string> keys_;
 }; // class
 
 
-class FaceDetectedEventRegister: public PeopleEventRegister<nao_interaction_msgs::FaceDetected>
+class FaceDetectedEventRegister: public PeopleEventRegister<nao_interaction_msgs::FaceDetectedArray>
 {
 public:
-  FaceDetectedEventRegister( const std::string& name, const std::vector<std::string> keys, const float& frequency, const qi::SessionPtr& session ) : PeopleEventRegister<nao_interaction_msgs::FaceDetected>(name, keys, frequency, session) {}
+  FaceDetectedEventRegister( const std::string& name, const std::vector<std::string> keys, const float& frequency, const qi::SessionPtr& session ) : PeopleEventRegister<nao_interaction_msgs::FaceDetectedArray>(name, keys, frequency, session) {}
+};
+
+class PersonDetectedEventRegister: public PeopleEventRegister<nao_interaction_msgs::PersonDetectedArray>
+{
+public:
+  PersonDetectedEventRegister( const std::string& name, const std::vector<std::string> keys, const float& frequency, const qi::SessionPtr& session ) : PeopleEventRegister<nao_interaction_msgs::PersonDetectedArray>(name, keys, frequency, session) {}
 };
 
 //QI_REGISTER_OBJECT(FaceDetectEventRegister, peopleCallback)
+//QI_REGISTER_OBJECT(PersonDetectedEventRegister, peopleCallback)
 
 static bool _qiregisterPeopleEventRegisterFaceDetected() {
-  ::qi::ObjectTypeBuilder<PeopleEventRegister<nao_interaction_msgs::FaceDetected> > b;
-  QI_VAARGS_APPLY(__QI_REGISTER_ELEMENT, PeopleEventRegister<nao_interaction_msgs::FaceDetected>, peopleCallback)
+  ::qi::ObjectTypeBuilder<PeopleEventRegister<nao_interaction_msgs::FaceDetectedArray> > b;
+  QI_VAARGS_APPLY(__QI_REGISTER_ELEMENT, PeopleEventRegister<nao_interaction_msgs::FaceDetectedArray>, peopleCallback)
     b.registerType();
   return true;
   }
 static bool BOOST_PP_CAT(__qi_registration, __LINE__) = _qiregisterPeopleEventRegisterFaceDetected();
+
+static bool _qiregisterPeopleEventRegisterPersonDetected() {
+  ::qi::ObjectTypeBuilder<PeopleEventRegister<nao_interaction_msgs::PersonDetectedArray> > b;
+  QI_VAARGS_APPLY(__QI_REGISTER_ELEMENT, PeopleEventRegister<nao_interaction_msgs::PersonDetectedArray>, peopleCallback)
+    b.registerType();
+  return true;
+  }
+static bool BOOST_PP_CAT(__qi_registration, __LINE__) = _qiregisterPeopleEventRegisterPersonDetected();
 
 } //naoqi
 
