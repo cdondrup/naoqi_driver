@@ -50,6 +50,7 @@ set(
 set(
   SERVICES_SRC
   src/services/robot_config.cpp
+  src/services/tablet_control.cpp
   )
 
 set(

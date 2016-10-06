@@ -72,6 +72,7 @@
  * SERVICES
  */
 #include "services/robot_config.hpp"
+#include "services/tablet_control.hpp"
 
 /*
  * RECORDERS
@@ -914,6 +915,19 @@ void Driver::registerService( service::Service srv )
 void Driver::registerDefaultServices()
 {
   registerService( boost::make_shared<service::RobotConfigService>("robot config service", "/naoqi_driver/get_robot_config", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("cleanWebview", "/naoqi_driver/tablet/clean_webview", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("hideWebview", "/naoqi_driver/tablet/hide_webview", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("pauseVideo", "/naoqi_driver/tablet/pause_video", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("resumeVideo", "/naoqi_driver/tablet/resume_video", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("stopVideo", "/naoqi_driver/tablet/stop_video", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("hideImage", "/naoqi_driver/tablet/hide_image", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("pauseGif", "/naoqi_driver/tablet/pause_gif", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("resumeGif", "/naoqi_driver/tablet/resume_gif", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("pauseGif", "/naoqi_driver/tablet/pause_gif", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("goToSleep", "/naoqi_driver/tablet/go_to_sleep", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("hide", "/naoqi_driver/tablet/hide", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("resetTablet", "/naoqi_driver/tablet/reset_tablet", sessionPtr_) );
+  registerService( boost::make_shared<service::TabletControlToggleService>("wakeUp", "/naoqi_driver/tablet/wake_up", sessionPtr_) );
 }
 
 std::vector<std::string> Driver::getAvailableConverters()
