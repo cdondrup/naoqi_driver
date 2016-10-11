@@ -42,6 +42,7 @@
 #include "converters/log.hpp"
 #include "converters/battery.hpp"
 #include "converters/odom.hpp"
+#include "converters/mood.hpp"
 
 /*
  * PUBLISHERS
@@ -593,6 +594,9 @@ void Driver::registerDefaultConverter()
   bool tactile_enabled                = boot_config_.get( "converters.tactile.enabled", true);
   bool face_enabled                   = boot_config_.get( "converters.face.enabled", true);
   bool people_enabled                 = boot_config_.get( "converters.people.enabled", true);
+  bool mood_enabled                   = boot_config_.get( "converters.mood.enabled", true);
+  size_t mood_frequency               = boot_config_.get( "converters.mood.frequency", 10);
+
   /*
    * The info converter will be called once after it was added to the priority queue. Once it is its turn to be called, its
    * callAll method will be triggered (because InfoPublisher is considered to always have subscribers, isSubscribed always
@@ -869,6 +873,17 @@ void Driver::registerDefaultConverter()
     if (publish_enabled_) {
       event_map_.find("people_detected")->second.isPublishing(true);
     }
+  }
+  /** Mood */
+  if ( mood_enabled )
+  {
+    boost::shared_ptr<publisher::BasicPublisher<nao_interaction_msgs::PersonMoodArray> > lp = boost::make_shared<publisher::BasicPublisher<nao_interaction_msgs::PersonMoodArray> >( "person_mood" );
+    boost::shared_ptr<recorder::BasicRecorder<nao_interaction_msgs::PersonMoodArray> > lr = boost::make_shared<recorder::BasicRecorder<nao_interaction_msgs::PersonMoodArray> >( "person_mood" );
+    boost::shared_ptr<converter::MoodConverter> lc = boost::make_shared<converter::MoodConverter>( "person_mood", mood_frequency, sessionPtr_ );
+    lc->registerCallback( message_actions::PUBLISH, boost::bind(&publisher::BasicPublisher<nao_interaction_msgs::PersonMoodArray>::publish, lp, _1) );
+    lc->registerCallback( message_actions::RECORD, boost::bind(&recorder::BasicRecorder<nao_interaction_msgs::PersonMoodArray>::write, lr, _1) );
+    lc->registerCallback( message_actions::LOG, boost::bind(&recorder::BasicRecorder<nao_interaction_msgs::PersonMoodArray>::bufferize, lr, _1) );
+    registerConverter( lc, lp, lr );
   }
 }
 
