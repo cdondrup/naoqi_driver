@@ -72,6 +72,7 @@
  * SERVICES
  */
 #include "services/robot_config.hpp"
+#include "services/memory.hpp"
 
 /*
  * RECORDERS
@@ -914,6 +915,7 @@ void Driver::registerService( service::Service srv )
 void Driver::registerDefaultServices()
 {
   registerService( boost::make_shared<service::RobotConfigService>("robot config service", "/naoqi_driver/get_robot_config", sessionPtr_) );
+  registerService( boost::make_shared<service::MemoryInsertService>("insertListData", "/naoqi_driver/memory/insert", sessionPtr_) );
 }
 
 std::vector<std::string> Driver::getAvailableConverters()
