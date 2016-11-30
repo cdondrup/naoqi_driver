@@ -154,6 +154,7 @@ void Driver::init()
 {
   ros::Time::init(); // can call this many times
   loadBootConfig();
+  applySettings();
   registerDefaultConverter();
   registerDefaultSubscriber();
   registerDefaultServices();
@@ -534,6 +535,17 @@ bool Driver::registerMemoryConverter( const std::string& key, float frequency, c
     }
   }
   return true;
+}
+
+void Driver::applySettings() {
+  // TTS setting
+  qi::AnyObject tts = sessionPtr_->service("ALTextToSpeech");
+  float bla = boot_config_.get( "settings.ALTextToSpeech.speed", 50.0);
+  ROS_INFO_STREAM("Setting parameters " << bla);
+  tts.call<void>("setParameter", "defaultVoiceSpeed", bla);
+  tts.call<void>("setLanguage", boot_config_.get( "settings.ALTextToSpeech.language", "German"));
+  ROS_INFO_STREAM("" << tts.call<std::string>("getLanguage"));
+  tts.call<void>("setVoice", boot_config_.get( "settings.ALTextToSpeech.voice", "naoenu"));
 }
 
 void Driver::registerDefaultConverter()
