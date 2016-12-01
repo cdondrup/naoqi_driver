@@ -26,11 +26,15 @@ namespace naoqi
 namespace subscriber
 {
 
-SpeechSubscriber::SpeechSubscriber( const std::string& name, const std::string& speech_topic, const qi::SessionPtr& session ):
+SpeechSubscriber::SpeechSubscriber(const std::string& name, const std::string& speech_topic, const qi::SessionPtr& session, const std::string language, const float speed):
   speech_topic_(speech_topic),
   BaseSubscriber( name, speech_topic, session ),
   p_tts_( session->service("ALTextToSpeech") )
-{}
+{
+  p_tts_.call<void>("setLanguage", language);
+  p_tts_.call<void>("setParameter", "speed", speed);
+  p_tts_.call<void>("setParameter", "defaultVoiceSpeed", speed);
+}
 
 void SpeechSubscriber::reset( ros::NodeHandle& nh )
 {

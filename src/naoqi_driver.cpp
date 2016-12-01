@@ -154,7 +154,6 @@ void Driver::init()
 {
   ros::Time::init(); // can call this many times
   loadBootConfig();
-  applySettings();
   registerDefaultConverter();
   registerDefaultSubscriber();
   registerDefaultServices();
@@ -537,19 +536,9 @@ bool Driver::registerMemoryConverter( const std::string& key, float frequency, c
   return true;
 }
 
-void Driver::applySettings() {
-  // TTS setting
-  qi::AnyObject tts = sessionPtr_->service("ALTextToSpeech");
-  float bla = boot_config_.get( "settings.ALTextToSpeech.speed", 50.0);
-  ROS_INFO_STREAM("Setting parameters " << bla);
-  tts.call<void>("setParameter", "defaultVoiceSpeed", bla);
-  tts.call<void>("setLanguage", boot_config_.get( "settings.ALTextToSpeech.language", "German"));
-  ROS_INFO_STREAM("" << tts.call<std::string>("getLanguage"));
-  tts.call<void>("setVoice", boot_config_.get( "settings.ALTextToSpeech.voice", "naoenu"));
-}
-
 void Driver::registerDefaultConverter()
 {
+
   // init global tf2 buffer
   tf2_buffer_.reset<tf2_ros::Buffer>( new tf2_ros::Buffer() );
   tf2_buffer_->setUsingDedicatedThread(true);
@@ -620,6 +609,7 @@ void Driver::registerDefaultConverter()
 
   bool face_enabled                   = boot_config_.get( "converters.face.enabled", true);
   bool people_enabled                 = boot_config_.get( "converters.people.enabled", true);
+
   /*
    * The info converter will be called once after it was added to the priority queue. Once it is its turn to be called, its
    * callAll method will be triggered (because InfoPublisher is considered to always have subscribers, isSubscribed always
@@ -963,9 +953,14 @@ void Driver::registerDefaultSubscriber()
 {
   if (!subscribers_.empty())
     return;
+
+  // Get settings from config
+  std::string tts_settings_language   = boot_config_.get( "settings.speech.language", "English");
+  float tts_settings_speed            = boot_config_.get( "settings.speech.speed", 100.0);
+
   registerSubscriber( boost::make_shared<naoqi::subscriber::TeleopSubscriber>("teleop", "/cmd_vel", "/joint_angles", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::MovetoSubscriber>("moveto", "/move_base_simple/goal", sessionPtr_, tf2_buffer_) );
-  registerSubscriber( boost::make_shared<naoqi::subscriber::SpeechSubscriber>("speech", "/speech", sessionPtr_) );
+  registerSubscriber( boost::make_shared<naoqi::subscriber::SpeechSubscriber>("speech", "/speech", sessionPtr_, tts_settings_language, tts_settings_speed) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::AnimatedSpeechSubscriber>("animated_speech", "/animated_speech", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::PlayAnimationSubscriber>("play_animation", "/play_animation", sessionPtr_) );
 }
@@ -978,6 +973,10 @@ void Driver::registerService( service::Service srv )
 
 void Driver::registerDefaultServices()
 {
+  // Get settings from config
+  std::string tts_settings_language   = boot_config_.get( "settings.speech.language", "English");
+  float tts_settings_speed            = boot_config_.get( "settings.speech.speed", 100.0);
+
   registerService( boost::make_shared<service::RobotConfigService>("robot config service", "/naoqi_driver/get_robot_config", sessionPtr_) );
   registerService( boost::make_shared<service::BehaviorManagerInfoService>("getInstalledBehaviors", "/naoqi_driver/behaviour_manager/get_installed_behaviors", sessionPtr_) );
   registerService( boost::make_shared<service::BehaviorManagerInfoService>("getRunningBehaviors", "/naoqi_driver/behaviour_manager/get_running_behaviors", sessionPtr_) );
@@ -999,7 +998,7 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::TrackerPointAtService>("ALTracker-pointAt", "/naoqi_driver/tracker/point_at", sessionPtr_) );
   registerService( boost::make_shared<service::TrackerLookAtService>("ALTracker-lookAt", "/naoqi_driver/tracker/look_at", sessionPtr_) );
   registerService( boost::make_shared<service::EnableBreathingService>("setBreathEnabled", "/naoqi_driver/motion/set_breath_enabled", sessionPtr_) );
-  registerService( boost::make_shared<service::TextToSpeechSayService>("ALTextToSpeech-say", "/naoqi_driver/tts/say", sessionPtr_) );
+  registerService( boost::make_shared<service::TextToSpeechSayService>("ALTextToSpeech-say", "/naoqi_driver/tts/say", sessionPtr_, tts_settings_language, tts_settings_speed) );
   registerService( boost::make_shared<service::AnimatedSpeechSayService>("ALAnimatedSpeech-say", "/naoqi_driver/animated_speech/say", sessionPtr_) );
 }
 

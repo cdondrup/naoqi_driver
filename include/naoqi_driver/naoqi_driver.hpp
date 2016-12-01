@@ -250,8 +250,6 @@ private:
   /* boot config */
   boost::property_tree::ptree boot_config_;
   void loadBootConfig();
-
-  void applySettings();
   void registerDefaultConverter();
   void registerDefaultSubscriber();
   void registerDefaultServices();

@@ -118,11 +118,10 @@
   },
   "settings":
   {
-    "ALTextToSpeech":
+    "speech":
     {
-      "speed"         : 90.0,
-      "language"      : "French",
-      "voice"         : "naoenu"
+      "speed"         : 80.0,
+      "language"      : "English"
     }
   }
 }

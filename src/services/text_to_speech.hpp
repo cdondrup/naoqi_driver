@@ -38,13 +38,16 @@ namespace service
 class TextToSpeechService
 {
 public:
-  TextToSpeechService( const std::string& name, const std::string& topic, const qi::SessionPtr& session ) :
+  TextToSpeechService( const std::string& name, const std::string& topic, const qi::SessionPtr& session, const std::string language, const float speed ) :
       name_(name),
       topic_(topic),
       session_(session),
       p_tts_(session->service("ALTextToSpeech"))
   {
     func_ = split(name_, '-').back();
+    p_tts_.call<void>("setLanguage", language);
+    p_tts_.call<void>("setParameter", "speed", speed);
+    p_tts_.call<void>("setParameter", "defaultVoiceSpeed", speed);
   }
 
   ~TextToSpeechService(){}
@@ -89,7 +92,7 @@ protected:
 class TextToSpeechSayService : public TextToSpeechService
 {
 public:
-  TextToSpeechSayService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : TextToSpeechService(name, topic, session) {}
+  TextToSpeechSayService(const std::string& name, const std::string& topic, const qi::SessionPtr& session, const std::string language, const float speed) : TextToSpeechService(name, topic, session, language, speed) {}
   void reset(ros::NodeHandle& nh);
   bool callback(nao_interaction_msgs::SayRequest& req, nao_interaction_msgs::SayResponse& resp);
 

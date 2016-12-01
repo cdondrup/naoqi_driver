@@ -38,7 +38,7 @@ namespace subscriber
 class SpeechSubscriber: public BaseSubscriber<SpeechSubscriber>
 {
 public:
-  SpeechSubscriber( const std::string& name, const std::string& speech_topic, const qi::SessionPtr& session );
+  SpeechSubscriber(const std::string& name, const std::string& speech_topic, const qi::SessionPtr& session, const std::string language, const float speed );
   ~SpeechSubscriber(){}
 
   void reset( ros::NodeHandle& nh );
