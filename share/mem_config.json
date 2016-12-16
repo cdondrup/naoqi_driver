@@ -1,10 +1,21 @@
 {
 	"memKeys": [
-		"Device/SubDeviceList/Battery/Charge/Sensor/Value",
-	        "Device/SubDeviceList/Battery/Charge/Sensor/TotalVoltage",
-	        "Device/SubDeviceList/Platform/ILS/Sensor/Value",
-	        "Device/SubDeviceList/Battery/Charge/Sensor/Charging"
+		"ctxTask",
+		"shopName",
+		"tskCompleted",
+		"prevAct",
+		"distance",
+		"turntaking",
+		"usrEngaged",
+		"mode",
+		"timeout",
+		"usrTermination",
+		"bye",
+		"usrEngChat",
+		"lowConf",
+		"tskFilled",
+		"slotMissing"
         ],
-        "topic": "battery_test",
+        "topic": "dialogue_values",
 	"frequency": 10
 }
