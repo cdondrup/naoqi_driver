@@ -53,7 +53,7 @@ bool NavigateToService::callback(nao_interaction_msgs::GoToPoseRequest& req,
                 << " z: " << req.pose.pose.position.z
                 << " yaw: " << yaw << std::endl;
 
-      p_navigation_.async<void>(func_,
+      p_navigation_.call<void>(func_,
                                req.pose.pose.position.x,
                                req.pose.pose.position.y,
                                yaw);
@@ -70,7 +70,7 @@ bool NavigateToService::callback(nao_interaction_msgs::GoToPoseRequest& req,
       pose[0] = req.pose.pose.position.x;
       pose[1] = req.pose.pose.position.y;
       pose[2] = yaw;
-      p_navigation_.async<void>("navigateToInMap", pose);
+      p_navigation_.call<void>("navigateToInMap", pose);
     }
     else
     {
@@ -101,7 +101,7 @@ bool NavigateToService::callback(nao_interaction_msgs::GoToPoseRequest& req,
                   << " z: " << pose_msg_bf.pose.position.z
                   << " yaw: " << yaw << std::endl;
 
-        p_navigation_.async<void>(func_,
+        p_navigation_.call<void>(func_,
                                  pose_msg_bf.pose.position.x,
                                  pose_msg_bf.pose.position.y,
                                  yaw);
@@ -139,7 +139,7 @@ bool NavigateToInMapService::callback(nao_interaction_msgs::GoToPoseRequest& req
     pose[0] = req.pose.pose.position.x;
     pose[1] = req.pose.pose.position.y;
     pose[2] = yaw;
-    p_navigation_.async<void>(func_, pose);
+    p_navigation_.call<void>(func_, pose);
   }
   else
   {
@@ -172,7 +172,7 @@ bool NavigateToInMapService::callback(nao_interaction_msgs::GoToPoseRequest& req
       pose[0] = pose_msg_bf.pose.position.x;
       pose[1] = pose_msg_bf.pose.position.y;
       pose[2] = yaw;
-      p_navigation_.async<void>(func_, pose);
+      p_navigation_.call<void>(func_, pose);
     }
     catch( const tf2::LookupException& e)
     {
@@ -307,7 +307,7 @@ bool RelocalizeInMapService::callback(nao_interaction_msgs::RelocalizeInMapReque
       pose[0] = pose_msg_bf.pose.position.x;
       pose[1] = pose_msg_bf.pose.position.y;
       pose[2] = yaw;
-      p_navigation_.async<void>(func_, pose);
+      p_navigation_.call<void>(func_, pose);
     }
     catch( const tf2::LookupException& e)
     {
