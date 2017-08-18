@@ -23,6 +23,7 @@ set(
   src/converters/battery.cpp
   src/converters/odom.cpp
   src/converters/sound.cpp
+  src/converters/recharge.cpp
   )
 set(
   TOOLS_SRC
@@ -61,6 +62,7 @@ set(
   src/services/text_to_speech.cpp
   src/services/animated_speech.cpp
   src/services/robot_posture.cpp
+  src/services/recharge.cpp
   )
 
 set(
@@ -83,6 +85,7 @@ set(
   src/event/touch.cpp
   src/event/people.cpp
   src/event/sound.cpp
+  src/event/recharge.cpp
   )
 
 # use catkin if qibuild is not found

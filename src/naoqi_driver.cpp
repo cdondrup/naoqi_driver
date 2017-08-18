@@ -43,6 +43,7 @@
 #include "converters/battery.hpp"
 #include "converters/odom.hpp"
 #include "converters/sound.hpp"
+#include "converters/recharge.hpp"
 
 /*
  * PUBLISHERS
@@ -83,6 +84,7 @@
 #include "services/text_to_speech.hpp"
 #include "services/animated_speech.hpp"
 #include "services/robot_posture.hpp"
+#include "services/recharge.hpp"
 
 /*
  * RECORDERS
@@ -102,6 +104,7 @@
 #include "event/touch.hpp"
 #include "event/people.hpp"
 #include "event/sound.hpp"
+#include "event/recharge.hpp"
 
 /*
  * STATIC FUNCTIONS INCLUDE
@@ -612,6 +615,7 @@ void Driver::registerDefaultConverter()
 
   bool face_enabled                   = boot_config_.get( "converters.face.enabled", true);
   bool people_enabled                 = boot_config_.get( "converters.people.enabled", true);
+  bool recharge_status_enabled        = boot_config_.get( "converters.recharge.enabled", true);
   /*
    * The info converter will be called once after it was added to the priority queue. Once it is its turn to be called, its
    * callAll method will be triggered (because InfoPublisher is considered to always have subscribers, isSubscribed always
@@ -895,6 +899,22 @@ void Driver::registerDefaultConverter()
     lc->registerCallback( message_actions::LOG, boost::bind(&recorder::BasicRecorder<nav_msgs::Odometry>::bufferize, lr, _1) );
     registerConverter( lc, lp, lr );
   }
+
+  /** RECHARGE **/
+  if ( recharge_status_enabled )
+  {
+    std::vector<std::string> recharge_events;
+    recharge_events.push_back("ALRecharge/StatusChanged");
+    boost::shared_ptr<RechargeStatusEventRegister> event_register =
+      boost::make_shared<RechargeStatusEventRegister>( "recharge_status", recharge_events, 0, sessionPtr_ );
+    insertEventConverter("recharge_status", event_register);
+    if (keep_looping) {
+      event_map_.find("recharge_status")->second.startProcess();
+    }
+    if (publish_enabled_) {
+      event_map_.find("recharge_status")->second.isPublishing(true);
+    }
+  }
   
   /** PEOPLE **/
   if ( face_enabled )
@@ -1003,6 +1023,8 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::ExploreService>("ALNavigation-explore", "/naoqi_driver/navigation/explore", sessionPtr_) );
   registerService( boost::make_shared<service::LoadExplorationService>("ALNavigation-loadExploration", "/naoqi_driver/navigation/load_exploration", sessionPtr_) );
   registerService( boost::make_shared<service::RelocalizeInMapService>("ALNavigation-relocalizeInMap", "/naoqi_driver/navigation/relocalize_in_map", sessionPtr_, tf2_buffer_) );
+  registerService( boost::make_shared<service::RechargeGoToStationService>("ALRecharge-goToStation", "/naoqi_driver/recharge/go_to_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeLeaveStationService>("ALRecharge-leaveStation", "/naoqi_driver/recharge/leave_station", sessionPtr_) );
 }
 
 std::vector<std::string> Driver::getAvailableConverters()
