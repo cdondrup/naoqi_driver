@@ -1023,8 +1023,12 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::ExploreService>("ALNavigation-explore", "/naoqi_driver/navigation/explore", sessionPtr_) );
   registerService( boost::make_shared<service::LoadExplorationService>("ALNavigation-loadExploration", "/naoqi_driver/navigation/load_exploration", sessionPtr_) );
   registerService( boost::make_shared<service::RelocalizeInMapService>("ALNavigation-relocalizeInMap", "/naoqi_driver/navigation/relocalize_in_map", sessionPtr_, tf2_buffer_) );
-  registerService( boost::make_shared<service::RechargeGoToStationService>("ALRecharge-goToStation", "/naoqi_driver/recharge/go_to_station", sessionPtr_) );
-  registerService( boost::make_shared<service::RechargeLeaveStationService>("ALRecharge-leaveStation", "/naoqi_driver/recharge/leave_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeAsyncService>("ALRecharge-goToStation", "/naoqi_driver/recharge/go_to_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeSyncService>("ALRecharge-leaveStation", "/naoqi_driver/recharge/leave_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeReturnPoseService>("ALRecharge-lookForStation", "/naoqi_driver/recharge/look_for_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeSyncService>("ALRecharge-moveInFrontOfStation", "/naoqi_driver/recharge/move_in_front_of_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeAsyncService>("ALRecharge-dockOnStation", "/naoqi_driver/recharge/dock_on_station", sessionPtr_) );
+  registerService( boost::make_shared<service::RechargeEmptyService>("ALRecharge-stopAll", "/naoqi_driver/recharge/stop_all", sessionPtr_) );
 }
 
 std::vector<std::string> Driver::getAvailableConverters()

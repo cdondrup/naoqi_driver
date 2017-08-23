@@ -23,8 +23,10 @@
 
 #include <ros/node_handle.h>
 #include <ros/service_server.h>
+#include <std_srvs/Empty.h>
 
 #include <nao_interaction_msgs/Recharge.h>
+#include <nao_interaction_msgs/RechargeReturnPose.h>
 #include <qi/session.hpp>
 
 namespace naoqi
@@ -82,21 +84,39 @@ protected:
   }
 };
 
-class RechargeGoToStationService : public RechargeService
+class RechargeEmptyService : public RechargeService
 {
 public:
-  RechargeGoToStationService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : RechargeService(name, topic, session) {}
+  RechargeEmptyService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : RechargeService(name, topic, session) {}
+  void reset(ros::NodeHandle& nh);
+  bool callback(std_srvs::EmptyRequest& req, std_srvs::EmptyResponse& resp);
+
+};
+
+class RechargeAsyncService : public RechargeService
+{
+public:
+  RechargeAsyncService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : RechargeService(name, topic, session) {}
   void reset(ros::NodeHandle& nh);
   bool callback(nao_interaction_msgs::RechargeRequest& req, nao_interaction_msgs::RechargeResponse& resp);
 
 };
 
-class RechargeLeaveStationService : public RechargeService
+class RechargeSyncService : public RechargeService
 {
 public:
-  RechargeLeaveStationService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : RechargeService(name, topic, session) {}
+  RechargeSyncService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : RechargeService(name, topic, session) {}
   void reset(ros::NodeHandle& nh);
   bool callback(nao_interaction_msgs::RechargeRequest& req, nao_interaction_msgs::RechargeResponse& resp);
+
+};
+
+class RechargeReturnPoseService : public RechargeService
+{
+public:
+  RechargeReturnPoseService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : RechargeService(name, topic, session) {}
+  void reset(ros::NodeHandle& nh);
+  bool callback(nao_interaction_msgs::RechargeReturnPoseRequest& req, nao_interaction_msgs::RechargeReturnPoseResponse& resp);
 
 };
 
