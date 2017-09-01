@@ -28,6 +28,7 @@
 #include <std_srvs/Empty.h>
 #include <nao_interaction_msgs/SetBreathEnabled.h>
 #include <nao_interaction_msgs/GoToPose.h>
+#include <nao_interaction_msgs/SetExternalCollision.h>
 #include <qi/session.hpp>
 #include <tf2_ros/buffer.h>
 
@@ -116,6 +117,16 @@ private:
   boost::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
 
 };
+
+class SetExternalCollisionService : public MotionService
+{
+public:
+  SetExternalCollisionService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : MotionService(name, topic, session) {}
+  void reset(ros::NodeHandle& nh);
+  bool callback(nao_interaction_msgs::SetExternalCollisionRequest& req, nao_interaction_msgs::SetExternalCollisionResponse& resp);
+
+};
+
 
 } // service
 } // naoqi

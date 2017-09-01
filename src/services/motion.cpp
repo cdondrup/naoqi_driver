@@ -100,5 +100,28 @@ bool MoveToService::callback(nao_interaction_msgs::GoToPoseRequest& req, nao_int
     return true;
 }
 
+void SetExternalCollisionService::reset( ros::NodeHandle& nh )
+{
+  service_ = nh.advertiseService(topic_, &SetExternalCollisionService::callback, this);
+}
+
+bool SetExternalCollisionService::callback(nao_interaction_msgs::SetExternalCollisionRequest& req, nao_interaction_msgs::SetExternalCollisionResponse& resp)
+{
+  if(req.group_name.compare("All") == 0
+          || req.group_name.compare("Move") == 0
+          || req.group_name.compare("Arms") == 0
+          || req.group_name.compare("LArm") == 0
+          || req.group_name.compare("RArm") == 0)
+  {
+    p_motion_.call<void>(func_, req.group_name, req.enable);
+  }
+  else
+  {
+    ROS_ERROR_STREAM("SetExternalCollisionService: unknown group_name '" << req.group_name << "'");
+    return false;
+  }
+  return true;
+}
+
 }
 }
