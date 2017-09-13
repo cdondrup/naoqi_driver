@@ -81,5 +81,5 @@ void RelocalizeSubscriber::callback( const geometry_msgs::PoseWithCovarianceStam
   p_navigation_.call<void>("startLocalization");
 }
 
-} //publisher
+} // subscriber
 } // naoqi

@@ -64,5 +64,5 @@ void TeleopSubscriber::joint_angles_callback( const naoqi_bridge_msgs::JointAngl
   }
 }
 
-} //publisher
+} // subscriber
 } // naoqi

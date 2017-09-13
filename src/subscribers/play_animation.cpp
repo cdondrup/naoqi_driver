@@ -47,5 +47,5 @@ void PlayAnimationSubscriber::pa_callback( const std_msgs::StringConstPtr& strin
     p_animation_player_.async<void>("runTag", string_msg->data);
 }
 
-} //publisher
+} // subscriber
 } // naoqi

@@ -44,5 +44,5 @@ void SpeechSubscriber::speech_callback( const std_msgs::StringConstPtr& string_m
   p_tts_.async<void>("say", string_msg->data);
 }
 
-} //publisher
+} // subscriber
 } // naoqi
