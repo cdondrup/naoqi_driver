@@ -1016,7 +1016,6 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::MoveToService>("ALMotion-moveTo", "/naoqi_driver/motion/move_to", sessionPtr_, tf2_buffer_) );
   registerService( boost::make_shared<service::SetExternalCollisionService>("ALMotion-setExternalCollisionProtectionEnabled", "/naoqi_driver/motion/set_set_external_collision", sessionPtr_) );
   registerService( boost::make_shared<service::NavigateToService>("ALNavigation-navigateTo", "/naoqi_driver/navigation/navigate_to", sessionPtr_, tf2_buffer_) );
-  registerService( boost::make_shared<service::NavigateToInMapService>("ALNavigation-navigateToInMap", "/naoqi_driver/navigation/navigate_to_in_map", sessionPtr_, tf2_buffer_) );
   registerService( boost::make_shared<service::TextToSpeechSayService>("ALTextToSpeech-say", "/naoqi_driver/tts/say", sessionPtr_) );
   registerService( boost::make_shared<service::AnimatedSpeechSayService>("ALAnimatedSpeech-say", "/naoqi_driver/animated_speech/say", sessionPtr_) );
   registerService( boost::make_shared<service::RobotPostureEmptyService>("ALRobotPosture-stopMove", "/naoqi_driver/robot_posture/stop_all", sessionPtr_) );

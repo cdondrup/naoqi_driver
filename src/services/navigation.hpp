@@ -64,7 +64,7 @@ public:
     return topic_;
   }
 
-  virtual void reset( ros::NodeHandle& nh )=0;
+  virtual void reset(ros::NodeHandle& nh)=0;
 
 protected:
   const std::string name_;
@@ -75,19 +75,25 @@ protected:
   qi::AnyObject p_navigation_;
   ros::ServiceServer service_;
 
-  void split(const std::string &s, char delim, std::vector<std::string> &elems) {
-      std::stringstream ss;
-      ss.str(s);
-      std::string item;
-      while (std::getline(ss, item, delim)) {
-          elems.push_back(item);
-      }
+  void split(const std::string &s,
+             char delim,
+             std::vector<std::string> &elems)
+  {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+        elems.push_back(item);
+    }
   }
 
-  std::vector<std::string> split(const std::string &s, char delim) {
-      std::vector<std::string> elems;
-      split(s, delim, elems);
-      return elems;
+  std::vector<std::string> split(const std::string &s,
+                                 char delim)
+  {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
   }
 };
 
@@ -128,30 +134,6 @@ private:
 
 };
 
-class NavigateToInMapService : public NavigationService
-{
-public:
-  NavigateToInMapService(const std::string& name,
-                         const std::string& topic,
-                         const qi::SessionPtr& session,
-                         const boost::shared_ptr<tf2_ros::Buffer>& tf2_buffer):
-    NavigationService(name, topic, session),
-    tf2_buffer_(tf2_buffer)
-  {
-    pose.reserve(3);
-    pose.resize(3);
-  }
-
-  void reset(ros::NodeHandle& nh);
-
-  bool callback(nao_interaction_msgs::GoToPoseRequest& req,
-                nao_interaction_msgs::GoToPoseResponse& resp);
-
-private:
-  boost::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-  std::vector<float> pose;
-};
-
 class ExploreService : public NavigationService
 {
 public:
@@ -177,8 +159,8 @@ public:
     NavigationService(name, topic, session),
     tf2_buffer_(tf2_buffer)
   {
-    pose.reserve(3);
-    pose.resize(3);
+    pose_.reserve(3);
+    pose_.resize(3);
   }
 
   void reset(ros::NodeHandle& nh);
@@ -188,7 +170,7 @@ public:
 
 private:
   boost::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-  std::vector<float> pose;
+  std::vector<float> pose_;
 };
 
 class LoadExplorationService : public NavigationService
