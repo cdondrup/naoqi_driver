@@ -40,14 +40,16 @@ namespace service
 class MotionService
 {
 public:
-  MotionService( const std::string& name, const std::string& topic, const qi::SessionPtr& session ):
+  MotionService(const std::string& name,
+                const std::string& topic,
+                const qi::SessionPtr& session):
       name_(name),
       topic_(topic),
       session_(session),
       p_motion_(session->service("ALMotion"))
-    {
-      func_ = split(name_, '-').back();
-    }
+  {
+    func_ = split(name_, '-').back();
+  }
 
   ~MotionService(){}
 
@@ -61,7 +63,7 @@ public:
     return topic_;
   }
 
-  virtual void reset( ros::NodeHandle& nh )=0;
+  virtual void reset(ros::NodeHandle& nh)=0;
 
 protected:
   const std::string name_;
@@ -72,46 +74,74 @@ protected:
   qi::AnyObject p_motion_;
   ros::ServiceServer service_;
 
-  void split(const std::string &s, char delim, std::vector<std::string> &elems) {
-      std::stringstream ss;
-      ss.str(s);
-      std::string item;
-      while (std::getline(ss, item, delim)) {
-          elems.push_back(item);
-      }
+  void split(const std::string &s,
+             char delim,
+             std::vector<std::string> &elems)
+  {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+      elems.push_back(item);
+    }
   }
 
-  std::vector<std::string> split(const std::string &s, char delim) {
-      std::vector<std::string> elems;
-      split(s, delim, elems);
-      return elems;
+  std::vector<std::string> split(const std::string &s,
+                                 char delim)
+  {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
   }
 };
 
 class MotionEmptyService : public MotionService
 {
 public:
-  MotionEmptyService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : MotionService(name, topic, session) {}
-  void reset(ros::NodeHandle& nh);
-  bool callback(std_srvs::EmptyRequest& req, std_srvs::EmptyResponse& resp);
+  MotionEmptyService(const std::string& name,
+                     const std::string& topic,
+                     const qi::SessionPtr& session):
+      MotionService(name, topic, session)
+  {}
 
+  void reset(ros::NodeHandle& nh);
+
+  bool callback(std_srvs::EmptyRequest& req,
+                std_srvs::EmptyResponse& resp);
 };
 
 class EnableBreathingService : public MotionService
 {
 public:
-  EnableBreathingService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : MotionService(name, topic, session) {}
+  EnableBreathingService(const std::string& name,
+                         const std::string& topic,
+                         const qi::SessionPtr& session):
+      MotionService(name, topic, session)
+  {}
+
   void reset(ros::NodeHandle& nh);
-  bool callback(nao_interaction_msgs::SetBreathEnabledRequest& req, nao_interaction_msgs::SetBreathEnabledResponse& resp);
+
+  bool callback(nao_interaction_msgs::SetBreathEnabledRequest& req,
+                nao_interaction_msgs::SetBreathEnabledResponse& resp);
 
 };
 
 class MoveToService : public MotionService
 {
 public:
-  MoveToService(const std::string& name, const std::string& topic, const qi::SessionPtr& session, const boost::shared_ptr<tf2_ros::Buffer>& tf2_buffer) : MotionService(name, topic, session), tf2_buffer_(tf2_buffer) {}
+  MoveToService(const std::string& name,
+                const std::string& topic,
+                const qi::SessionPtr& session,
+                const boost::shared_ptr<tf2_ros::Buffer>& tf2_buffer):
+      MotionService(name, topic, session),
+      tf2_buffer_(tf2_buffer)
+  {}
+
   void reset(ros::NodeHandle& nh);
-  bool callback(nao_interaction_msgs::GoToPoseRequest& req, nao_interaction_msgs::GoToPoseResponse& resp);
+
+  bool callback(nao_interaction_msgs::GoToPoseRequest& req,
+                nao_interaction_msgs::GoToPoseResponse& resp);
 
 private:
   boost::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
@@ -121,12 +151,18 @@ private:
 class SetExternalCollisionService : public MotionService
 {
 public:
-  SetExternalCollisionService(const std::string& name, const std::string& topic, const qi::SessionPtr& session) : MotionService(name, topic, session) {}
+  SetExternalCollisionService(const std::string& name,
+                              const std::string& topic,
+                              const qi::SessionPtr& session):
+      MotionService(name, topic, session)
+  {}
+
   void reset(ros::NodeHandle& nh);
-  bool callback(nao_interaction_msgs::SetExternalCollisionRequest& req, nao_interaction_msgs::SetExternalCollisionResponse& resp);
+
+  bool callback(nao_interaction_msgs::SetExternalCollisionRequest& req,
+                nao_interaction_msgs::SetExternalCollisionResponse& resp);
 
 };
-
 
 } // service
 } // naoqi
