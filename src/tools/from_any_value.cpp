@@ -779,6 +779,51 @@ NaoqiPersonDetected fromAnyValueToNaoqiPersonDetected(qi::AnyValue& value) {
   
     return result;
 }
+std::vector < std::vector<float> > fromAnyValueToFloatVectorVector(qi::AnyValue& value, std::vector< std::vector<float> >& result)
+{
+  qi::AnyReferenceVector anyrefs;
+  try
+  {
+    anyrefs = value.asListValuePtr();
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in : " << e.what() << std::endl;
+    return result;
+  }
+
+  result.resize(anyrefs.size());
+
+  for(int i=0; i<anyrefs.size(); i++)
+  {
+    qi::AnyReferenceVector anyref;
+
+    try
+    {
+      anyref = anyrefs[i].asListValuePtr();
+    }
+    catch (const std::exception& e)
+    {
+      std::cerr << "Exception caught : " << e.what() << std::endl;
+      return result;
+    }
+
+    for(int j=0; j<anyref.size(); j++)
+    {
+      try
+      {
+        result[i].push_back(anyref[j].content().toFloat());
+      }
+      catch(std::runtime_error& e)
+      {
+        result[i].push_back(-1.0);
+        std::cout << e.what() << "=> set to -1" << std::endl;
+      }
+    }
+  }
+
+  return result;
+}
 
 std::vector<float> fromAnyValueToFloatVector(qi::AnyValue& value, std::vector<float>& result){
   qi::AnyReferenceVector anyrefs = value.asListValuePtr();

@@ -18,6 +18,7 @@
 #include "navigation.hpp"
 #include "../helpers/driver_helpers.hpp"
 #include "../helpers/transform_helpers.hpp"
+#include "../tools/from_any_value.hpp"
 
 namespace naoqi
 {
@@ -405,6 +406,72 @@ bool RelocalizeInMapService::callback(nao_interaction_msgs::RelocalizeInMapReque
   }
 
   return resp.result;
+}
+
+void GetRobotPositionInMapService::reset(ros::NodeHandle& nh)
+{
+  service_ = nh.advertiseService(topic_, &GetRobotPositionInMapService::callback, this);
+}
+
+bool GetRobotPositionInMapService::callback(nao_interaction_msgs::GetRobotPositionInMapRequest& req,
+                                            nao_interaction_msgs::GetRobotPositionInMapResponse& resp)
+{
+  geometry_msgs::PoseStamped pose;
+  pose.header.frame_id = "map";
+  pose.header.stamp = ros::Time::now();
+
+  qi::AnyValue anyvalues;
+  try
+  {
+    anyvalues = p_navigation_.call<qi::AnyValue>("getRobotPositionInMap");
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALNavigation.getRobotPositionInMap : "
+              << e.what() << std::endl;
+    resp.pose = geometry_msgs::PoseStamped();
+    return false;
+  }
+
+  std::vector < std::vector<float> > position_in_map;
+  tools::fromAnyValueToFloatVectorVector(anyvalues, position_in_map);
+
+  if (position_in_map.empty())
+  {
+    resp.pose = geometry_msgs::PoseStamped();
+    return false;
+  }
+
+  if (position_in_map.size() <= 0)
+  {
+    resp.pose = geometry_msgs::PoseStamped();
+    return false;
+  }
+
+  if (position_in_map[0].size() != 3)
+  {
+    resp.pose = geometry_msgs::PoseStamped();
+    return false;
+  }
+
+  //set the position
+  pose.pose.position.x = position_in_map[0][0];
+  pose.pose.position.y = position_in_map[0][1];
+
+  //set the orientation
+  tf2::Vector3 axis;
+  axis[0] = 0;
+  axis[1] = 0;
+  axis[2] = 1;
+
+  tf2::Quaternion q = tf2::Quaternion(axis, position_in_map[0][2]);
+  pose.pose.orientation.w = q.w();
+  pose.pose.orientation.x = q.x();
+  pose.pose.orientation.y = q.y();
+  pose.pose.orientation.z = q.z();
+
+  resp.pose = pose;
+  return true;
 }
 
 }

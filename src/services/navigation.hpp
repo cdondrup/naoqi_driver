@@ -30,6 +30,7 @@
 #include <nao_interaction_msgs/Explore.h>
 #include <nao_interaction_msgs/LoadExploration.h>
 #include <nao_interaction_msgs/RelocalizeInMap.h>
+#include <nao_interaction_msgs/GetRobotPositionInMap.h>
 #include <qi/session.hpp>
 #include <tf2_ros/buffer.h>
 
@@ -185,6 +186,20 @@ public:
 
   bool callback(nao_interaction_msgs::LoadExplorationRequest& req,
                 nao_interaction_msgs::LoadExplorationResponse& resp);
+};
+
+class GetRobotPositionInMapService : public NavigationService
+{
+public:
+  GetRobotPositionInMapService(const std::string& name,
+                               const std::string& topic,
+                               const qi::SessionPtr& session):
+    NavigationService(name, topic, session) {}
+
+  void reset(ros::NodeHandle& nh);
+
+  bool callback(nao_interaction_msgs::GetRobotPositionInMapRequest& req,
+                nao_interaction_msgs::GetRobotPositionInMapResponse& resp);
 };
 
 } // service
