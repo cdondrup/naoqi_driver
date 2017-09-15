@@ -310,7 +310,6 @@ bool RelocalizeInMapService::callback(nao_interaction_msgs::RelocalizeInMapReque
                                       nao_interaction_msgs::RelocalizeInMapResponse& resp)
 {
   resp.result = false;
-
   //stop localization
   try
   {
@@ -320,7 +319,6 @@ bool RelocalizeInMapService::callback(nao_interaction_msgs::RelocalizeInMapReque
   {
     std::cerr << "Exception caught in ALNavigation.stopLocalization : "
               << e.what() << std::endl;
-    return false;
   }
 
   //relocalize
@@ -353,43 +351,44 @@ bool RelocalizeInMapService::callback(nao_interaction_msgs::RelocalizeInMapReque
     if (!canTransform) {
       std::cerr << "Cannot transform from " << req.pose.header.frame_id
                 << " to " << frame << std::endl;
-      return false;
     }
-
-    try
+    else
     {
-      tf2_buffer_->transform( req.pose, pose_msg_bf,
-                              frame,
-                              ros::Time(0),
-                              req.pose.header.frame_id );
+      try
+      {
+        tf2_buffer_->transform( req.pose, pose_msg_bf,
+                                frame,
+                                ros::Time(0),
+                                req.pose.header.frame_id );
 
-      double yaw = helpers::transform::getYaw(pose_msg_bf.pose);
-      std::cout << "going to navigate x: " << pose_msg_bf.pose.position.x
-                << " y: " << pose_msg_bf.pose.position.y
-                << " z: " << pose_msg_bf.pose.position.z
-                << " yaw: " << yaw << std::endl;
+        double yaw = helpers::transform::getYaw(pose_msg_bf.pose);
+        std::cout << "going to navigate x: " << pose_msg_bf.pose.position.x
+                  << " y: " << pose_msg_bf.pose.position.y
+                  << " z: " << pose_msg_bf.pose.position.z
+                  << " yaw: " << yaw << std::endl;
 
-      pose_[0] = pose_msg_bf.pose.position.x;
-      pose_[1] = pose_msg_bf.pose.position.y;
-      pose_[2] = yaw;
+        pose_[0] = pose_msg_bf.pose.position.x;
+        pose_[1] = pose_msg_bf.pose.position.y;
+        pose_[2] = yaw;
 
-      p_navigation_.call<void>(func_, pose_);
-      resp.result = true;
-    }
-    catch( const tf2::LookupException& e)
-    {
-      std::cout << e.what() << std::endl;
-      std::cout << func_ << " in frame_id " << req.pose.header.frame_id
-                << "is not supported; use the " << frame << " frame" << std::endl;
-    }
-    catch( const tf2::ExtrapolationException& e)
-    {
-      std::cout << "received an error on the time lookup" << std::endl;
-    }
-    catch (const std::exception& e)
-    {
-      std::cerr << "Exception caught in ALNavigation." << func_ << " : "
-                << e.what() << std::endl;
+        p_navigation_.call<void>(func_, pose_);
+        resp.result = true;
+      }
+      catch( const tf2::LookupException& e)
+      {
+        std::cout << e.what() << std::endl;
+        std::cout << func_ << " in frame_id " << req.pose.header.frame_id
+                  << "is not supported; use the " << frame << " frame" << std::endl;
+      }
+      catch( const tf2::ExtrapolationException& e)
+      {
+        std::cout << "received an error on the time lookup" << std::endl;
+      }
+      catch (const std::exception& e)
+      {
+        std::cerr << "Exception caught in ALNavigation." << func_ << " : "
+                  << e.what() << std::endl;
+      }
     }
   }
 
