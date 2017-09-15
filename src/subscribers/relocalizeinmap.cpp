@@ -40,10 +40,7 @@ RelocalizeSubscriber::RelocalizeSubscriber( const std::string& name,
   BaseSubscriber( name, topic, session ),
   p_navigation_( session->service("ALNavigation") ),
   tf2_buffer_( tf2_buffer )
-{
-  pose.reserve(3);
-  pose.resize(3);
-}
+{}
 
 void RelocalizeSubscriber::reset( ros::NodeHandle& nh )
 {
@@ -53,32 +50,58 @@ void RelocalizeSubscriber::reset( ros::NodeHandle& nh )
 
 void RelocalizeSubscriber::callback( const geometry_msgs::PoseWithCovarianceStamped& pose_msg )
 {
-  //stop localization
-  p_navigation_.call<void>("stopLocalization");
+  std::string func = "relocalizeInMap";
 
-  if ( pose_msg.header.frame_id == "map" )
+  if ( pose_msg.header.frame_id != "map" )
   {
-    double yaw = helpers::transform::getYaw(pose_msg.pose.pose);
-
-    std::cout << "going to " << name_
-              << " x: " <<  pose_msg.pose.pose.position.x
-              << " y: " << pose_msg.pose.pose.position.y
-              << " z: " << pose_msg.pose.pose.position.z
-              << " yaw: " << yaw << std::endl;
-
-    pose[0] = pose_msg.pose.pose.position.x;
-    pose[1] = pose_msg.pose.pose.position.y;
-    pose[2] = yaw;
-    p_navigation_.call<void>(name_, pose);
-  }
-  else
-  {
-    std::cout << name_ << " in frame " << pose_msg.header.frame_id
+    std::cout << func << " in frame " << pose_msg.header.frame_id
               << " is not supported; use the map frame" << std::endl;
   }
 
+  //stop localization
+  try
+  {
+    p_navigation_.call<void>("stopLocalization");
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALNavigation.stopLocalization "
+              << e.what() << std::endl;
+  }
+
+  double yaw = helpers::transform::getYaw(pose_msg.pose.pose);
+
+  std::cout << "going to " << func
+            << " x: " <<  pose_msg.pose.pose.position.x
+            << " y: " << pose_msg.pose.pose.position.y
+            << " z: " << pose_msg.pose.pose.position.z
+            << " yaw: " << yaw << std::endl;
+
+  std::vector<float> pose(3);
+  pose[0] = pose_msg.pose.pose.position.x;
+  pose[1] = pose_msg.pose.pose.position.y;
+  pose[2] = yaw;
+
+  try
+  {
+    p_navigation_.call<void>(func, pose);
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALNavigation." << func << " : "
+              << e.what() << std::endl;
+  }
+
   //start localization
-  p_navigation_.call<void>("startLocalization");
+  try
+  {
+    p_navigation_.call<void>("startLocalization");
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALNavigation.startLocalization "
+              << e.what() << std::endl;
+  }
 }
 
 } // subscriber

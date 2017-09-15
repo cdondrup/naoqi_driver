@@ -52,7 +52,6 @@ private:
   qi::AnyObject p_navigation_;
   ros::Subscriber sub_relocalize_;
   boost::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-  std::vector<float> pose;
 };
 
 } // subscriber
