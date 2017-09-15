@@ -28,30 +28,35 @@
  * ROS includes
  */
 #include <ros/ros.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <tf2_ros/buffer.h>
+
+#include <nao_interaction_msgs/NavigateToAction.h>
+
+#include <actionlib/client/simple_action_client.h>
 
 namespace naoqi
 {
 namespace subscriber
 {
 
-class NavigatetoSubscriber: public BaseSubscriber<NavigatetoSubscriber>
+typedef actionlib::SimpleActionClient<nao_interaction_msgs::NavigateToAction> NavigateToAcionClient;
+
+class NavigateToSubscriber: public BaseSubscriber<NavigateToSubscriber>
 {
 public:
-  NavigatetoSubscriber( const std::string& name,
+  NavigateToSubscriber( const std::string& name,
                         const std::string& topic,
-                        const qi::SessionPtr& session,
-                        const boost::shared_ptr<tf2_ros::Buffer>& tf2_buffer );
-  ~NavigatetoSubscriber(){}
+                        const qi::SessionPtr& session);
+  ~NavigateToSubscriber(){}
 
   void reset( ros::NodeHandle& nh );
   void callback( const geometry_msgs::PoseStampedConstPtr& pose_msg );
 
 private:
+  std::string name_;
   qi::AnyObject p_navigation_;
   ros::Subscriber sub_navigateto_;
-  boost::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+  NavigateToAcionClient *navigate_client_;
+  ros::Publisher navigate_goal_pub_;
 };
 
 } // subscriber

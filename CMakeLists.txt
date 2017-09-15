@@ -75,6 +75,11 @@ set(
   )
 
 set(
+  SERVERS_SRC
+  src/servers/navigate_to_server.cpp
+)
+
+set(
   DRIVER_SRC
   src/naoqi_driver.cpp
   src/helpers/driver_helpers.cpp
@@ -118,6 +123,7 @@ qi_create_lib(
   ${SERVICES_SRC}
   ${RECORDER_SRC}
   ${TOOLS_SRC}
+  ${SERVERS_SRC}
 )
 qi_use_lib( naoqi_driver QICORE QI ROS )
 qi_stage_lib( naoqi_driver )

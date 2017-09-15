@@ -22,6 +22,7 @@ find_package(catkin COMPONENTS
   tf2_geometry_msgs
   tf2_msgs
   tf2_ros
+  actionlib
 )
 find_package(OpenCV)
 find_package(orocos_kdl)
@@ -55,6 +56,7 @@ add_library(
   ${SERVICES_SRC}
   ${RECORDER_SRC}
   ${TOOLS_SRC}
+  ${SERVERS_SRC}
 )
 target_link_libraries(
   naoqi_driver

@@ -107,6 +107,11 @@
 #include "event/recharge.hpp"
 
 /*
+ * SERVERS
+ */
+#include "servers/navigate_to_server.hpp"
+
+/*
  * STATIC FUNCTIONS INCLUDE
  */
 #include "ros_env.hpp"
@@ -164,6 +169,7 @@ void Driver::init()
   registerDefaultConverter();
   registerDefaultSubscriber();
   registerDefaultServices();
+  registerDefaultServers();
   startRosLoop();
 }
 
@@ -975,7 +981,7 @@ void Driver::registerDefaultSubscriber()
   if (!subscribers_.empty())
     return;
   registerSubscriber( boost::make_shared<naoqi::subscriber::TeleopSubscriber>("teleop", "/cmd_vel", "/joint_angles", sessionPtr_) );
-  registerSubscriber( boost::make_shared<naoqi::subscriber::NavigatetoSubscriber>("navigateto", "/move_base_simple/goal", sessionPtr_, tf2_buffer_) );
+  registerSubscriber( boost::make_shared<naoqi::subscriber::NavigateToSubscriber>("navigate_to", "/move_base_simple/goal", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::SpeechSubscriber>("speech", "/speech", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::AnimatedSpeechSubscriber>("animated_speech", "/animated_speech", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::PlayAnimationSubscriber>("play_animation", "/play_animation", sessionPtr_) );
@@ -986,7 +992,6 @@ void Driver::registerService( service::Service srv )
 {
   services_.push_back( srv );
 }
-
 
 void Driver::registerDefaultServices()
 {
@@ -1030,6 +1035,16 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::RechargeSyncService>("ALRecharge-moveInFrontOfStation", "/naoqi_driver/recharge/move_in_front_of_station", sessionPtr_) );
   registerService( boost::make_shared<service::RechargeAsyncService>("ALRecharge-dockOnStation", "/naoqi_driver/recharge/dock_on_station", sessionPtr_) );
   registerService( boost::make_shared<service::RechargeEmptyService>("ALRecharge-stopAll", "/naoqi_driver/recharge/stop_all", sessionPtr_) );
+}
+
+void Driver::registerServer( server::Server srv )
+{
+  servers_.push_back( srv );
+}
+
+void Driver::registerDefaultServers()
+{
+  registerServer( boost::make_shared<server::NavigateToServer>("ALNavigation-navigateTo", "navigate_to", sessionPtr_, tf2_buffer_) );
 }
 
 std::vector<std::string> Driver::getAvailableConverters()
@@ -1108,6 +1123,12 @@ void Driver::setMasterURINet( const std::string& uri, const std::string& network
     for_each( service::Service& srv, services_ )
     {
       std::cout << "resetting service " << srv.name() << std::endl;
+      srv.reset( *nhPtr_ );
+    }
+
+    for_each( server::Server& srv, servers_ )
+    {
+      std::cout << "resetting server " << srv.name() << std::endl;
       srv.reset( *nhPtr_ );
     }
   }

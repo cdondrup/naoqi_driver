@@ -45,6 +45,7 @@
 #include <naoqi_driver/recorder/recorder.hpp>
 #include <naoqi_driver/event/event.hpp>
 #include <naoqi_driver/recorder/globalrecorder.hpp>
+#include <naoqi_driver/server/server.hpp>
 
 namespace tf2_ros
 {
@@ -168,6 +169,16 @@ public:
    * eventually this should be replaced by move semantics C++11
    */
   void registerService( service::Service srv );
+
+  /**
+   * @brief registers a server
+   * @param server to register
+   * @see Server
+   * @note it will be called by value to expose that internally there will be a copy,
+   * eventually this should be replaced by move semantics C++11
+   */
+  void registerServer( server::Server srv );
+
   /**
   * @brief qicli call function to get current master uri
   * @return string indicating http master uri
@@ -254,6 +265,7 @@ private:
   void registerDefaultConverter();
   void registerDefaultSubscriber();
   void registerDefaultServices();
+  void registerDefaultServers();
   void insertEventConverter(const std::string& key, event::Event event);
 
   template <typename T1, typename T2, typename T3>
@@ -287,6 +299,7 @@ private:
 
   std::vector< subscriber::Subscriber > subscribers_;
   std::vector< service::Service > services_;
+  std::vector< server::Server > servers_;
 
   float buffer_duration_;
 
