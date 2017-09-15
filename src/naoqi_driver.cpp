@@ -979,7 +979,7 @@ void Driver::registerDefaultSubscriber()
   registerSubscriber( boost::make_shared<naoqi::subscriber::SpeechSubscriber>("speech", "/speech", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::AnimatedSpeechSubscriber>("animated_speech", "/animated_speech", sessionPtr_) );
   registerSubscriber( boost::make_shared<naoqi::subscriber::PlayAnimationSubscriber>("play_animation", "/play_animation", sessionPtr_) );
-  registerSubscriber( boost::make_shared<naoqi::subscriber::RelocalizeSubscriber>("relocalizeInMap", "/initialpose", sessionPtr_, tf2_buffer_) );
+  registerSubscriber( boost::make_shared<naoqi::subscriber::RelocalizeSubscriber>("relocalize_in_map", "/initialpose", sessionPtr_, tf2_buffer_) );
 }
 
 void Driver::registerService( service::Service srv )
