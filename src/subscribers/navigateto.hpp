@@ -46,17 +46,28 @@ public:
   NavigateToSubscriber( const std::string& name,
                         const std::string& topic,
                         const qi::SessionPtr& session);
-  ~NavigateToSubscriber(){}
+  ~NavigateToSubscriber(){
+    spin_thread_->join();
+  }
 
   void reset( ros::NodeHandle& nh );
   void callback( const geometry_msgs::PoseStampedConstPtr& pose_msg );
 
 private:
+  //name of the subscriber
   std::string name_;
-  qi::AnyObject p_navigation_;
+
+  //subscriber
   ros::Subscriber sub_navigateto_;
+
+  //client to navigate_to server
   NavigateToAcionClient *navigate_client_;
-  ros::Publisher navigate_goal_pub_;
+
+  //if the first goal has been sent
+  bool initialized_;
+
+  //pointer to the thread
+  boost::thread *spin_thread_;
 };
 
 } // subscriber

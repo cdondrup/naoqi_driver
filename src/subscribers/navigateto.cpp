@@ -25,13 +25,18 @@ namespace naoqi
 namespace subscriber
 {
 
+void spinThread()
+{
+  ros::spin();
+}
+
 NavigateToSubscriber::NavigateToSubscriber( const std::string& name,
                                             const std::string& topic,
                                             const qi::SessionPtr& session ):
   BaseSubscriber( name, topic, session ),
   name_(name),
-  p_navigation_( session->service("ALNavigation") ),
-  navigate_client_(NULL)
+  navigate_client_(NULL),
+  initialized_(false)
 {}
 
 void NavigateToSubscriber::reset( ros::NodeHandle& nh )
@@ -42,7 +47,7 @@ void NavigateToSubscriber::reset( ros::NodeHandle& nh )
   navigate_client_ = new NavigateToAcionClient(nh, name_, true);
   ROS_INFO_STREAM("Starting " << name_ << " client");
 
-  navigate_goal_pub_ = nh.advertise<nao_interaction_msgs::NavigateToActionGoal>(name_ + "/goal", 1);
+  spin_thread_ = new boost::thread(&spinThread);
 }
 
 void NavigateToSubscriber::callback( const geometry_msgs::PoseStampedConstPtr& pose_msg )
@@ -51,10 +56,27 @@ void NavigateToSubscriber::callback( const geometry_msgs::PoseStampedConstPtr& p
     while(!navigate_client_->waitForServer(ros::Duration(5.0)))
       ROS_INFO_STREAM("Waiting for " << name_ << " server to come up");
 
-  nao_interaction_msgs::NavigateToActionGoal navigate_goal;
-  navigate_goal.header.stamp = ros::Time::now();
-  navigate_goal.goal.target_pose = *pose_msg;
-  navigate_goal_pub_.publish(navigate_goal);
+  if (initialized_)
+    if (navigate_client_->getState() != actionlib::SimpleClientGoalState::LOST)
+    {
+      navigate_client_->stopTrackingGoal();
+      navigate_client_->cancelAllGoals();
+      ROS_DEBUG_STREAM(name_ << "client stopped tracking the goal.");
+    }
+
+  nao_interaction_msgs::NavigateToGoal goal;
+  goal.target_pose = *pose_msg;
+  navigate_client_->sendGoal(goal);
+  initialized_ = true;
+
+  navigate_client_->waitForResult();
+
+  if (navigate_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+  {
+    ROS_DEBUG_STREAM(name_ << " client succeded.");
+  }
+  else
+    ROS_DEBUG_STREAM(name_ << " client failed.");
 }
 
 } // subscriber
