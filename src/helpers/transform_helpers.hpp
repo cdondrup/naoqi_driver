@@ -45,6 +45,13 @@ inline double getYaw( const geometry_msgs::Transform& pose)
   return yaw;
 }
 
+inline double getYaw( const tf2::Quaternion& pose )
+{
+  double yaw, _pitch, _roll;
+  tf2::Matrix3x3(pose).getEulerYPR(yaw, _pitch, _roll);
+  return yaw;
+}
+
 } //transform
 } //helpers
 } // naoqi

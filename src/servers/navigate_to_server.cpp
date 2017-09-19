@@ -17,8 +17,6 @@
 
 #include "navigate_to_server.hpp"
 
-#include "../services/motion.hpp"
-
 #include "../helpers/transform_helpers.hpp"
 #include "../tools/from_any_value.hpp"
 
@@ -146,7 +144,8 @@ bool NavigationServer::navigateInMap(const geometry_msgs::PoseStamped& pose)
     if (error_code == 0)
       res = true;
     else
-      ROS_INFO_STREAM("ALNavigation." << func << " returned an error code " << error_code);
+      ROS_INFO_STREAM("ALNavigation." << func
+                      << " returned an error code " << error_code);
   }
   catch (const std::exception& e)
   {
@@ -155,6 +154,19 @@ bool NavigationServer::navigateInMap(const geometry_msgs::PoseStamped& pose)
   }
 
   return res;
+}
+
+void NavigationServer::stopNavigateTo()
+{
+  try
+  {
+    p_navigation_.call<void>("stopNavigateTo");
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALNavigation.stopNavigateTo : "
+              << e.what() << std::endl;
+  }
 }
 
 geometry_msgs::PoseStamped NavigationServer::getRobotPositionInMap()
@@ -249,29 +261,48 @@ float NavigationServer::getYaw(const geometry_msgs::PoseStamped& pose_current,
   tf2::Quaternion orientation_target = q_target * q_current.inverse();
 
   //moveTo
-  tf2::Matrix3x3 m(orientation_target);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
+  double yaw = helpers::transform::getYaw(orientation_target);
 
   return yaw;
 }
 
 void NavigateToServer::reset( ros::NodeHandle& nh )
 {
-  navigate_to_in_map_server_ = new NavigateToActionServer(nh,
-                                                          function_,
-                                                          boost::bind(&NavigateToServer::execute, this, _1),
-                                                          false);
+  navigate_to_server_ = new NavigateToActionServer(nh,
+                                                   function_,
+                                                   boost::bind(&NavigateToServer::execute, this, _1),
+                                                   false);
 
-  navigate_to_in_map_server_->start();
+  navigate_to_server_->start();
   ROS_INFO_STREAM(function_ << " server is started.");
 }
 
 void NavigateToServer::execute(const nao_interaction_msgs::NavigateToGoalConstPtr& goal)
 {
   bool res(false);
+  geometry_msgs::PoseStamped goal_pose(goal->target_pose);
   nao_interaction_msgs::NavigateToResult result;
-  nao_interaction_msgs::NavigateToFeedback feedback;
+
+  if(navigate_to_server_->isPreemptRequested())
+  {
+    if(navigate_to_server_->isNewGoalAvailable())
+    {
+      nao_interaction_msgs::NavigateToGoal new_goal =
+              *navigate_to_server_->acceptNewGoal();
+      goal_pose = new_goal.target_pose;
+      ROS_INFO("New goal is set");
+
+      ROS_INFO("Stopping to navigate to");
+      stopNavigateTo();
+    }
+    else
+    {
+      ROS_DEBUG_NAMED(function_, "Navigate_to server preempting the current goal");
+      navigate_to_server_->setPreempted();
+
+      return;
+    }
+  }
 
   //NavigateTo
   if (goal->target_pose.header.frame_id == "base_footprint")
@@ -289,27 +320,25 @@ void NavigateToServer::execute(const nao_interaction_msgs::NavigateToGoalConstPt
 
   //get the current robot position in the map
   geometry_msgs::PoseStamped pose_current = getRobotPositionInMap();
-  feedback.base_position = pose_current;
+  result.base_position = pose_current;
 
   //apply orientation if needed
-  if (goal->target_pose.header.frame_id == "map")
+  if ((goal->target_pose.header.frame_id == "map") && res)
   {
     float yaw = getYaw(pose_current, goal->target_pose);
     moveTo(0, 0, yaw);
   }
 
-  //publish the feedback
-  navigate_to_in_map_server_->publishFeedback(feedback);
-
   //publish the result
   if (res)
   {
     ROS_INFO_STREAM(function_ << " server : exectution succeded.");
-    navigate_to_in_map_server_->setSucceeded(result);
+    navigate_to_server_->setSucceeded(result);
   }
   else
   {
-    navigate_to_in_map_server_->setAborted();
+    ROS_INFO_STREAM(function_ << " server : exectution failed.");
+    navigate_to_server_->setAborted();
   }
 }
 

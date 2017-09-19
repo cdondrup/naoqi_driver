@@ -156,6 +156,10 @@ protected:
   bool navigateInMap(const geometry_msgs::PoseStamped& pose);
 
 /**
+  * @brief stops navigating
+  */
+  void stopNavigateTo();
+/**
   * @brief move to the pose
   * @param x position
   * @param y posiiton
@@ -194,13 +198,13 @@ public:
                    const qi::SessionPtr& session,
                    const boost::shared_ptr<tf2_ros::Buffer>& tf2_buffer):
     NavigationServer(name, function, session, tf2_buffer),
-    navigate_to_in_map_server_(NULL)
+    navigate_to_server_(NULL)
   {}
 
   ~NavigateToServer()
   {
-    if(navigate_to_in_map_server_ != NULL)
-      delete navigate_to_in_map_server_;
+    if(navigate_to_server_ != NULL)
+      delete navigate_to_server_;
   }
 
 /**
@@ -216,7 +220,7 @@ public:
   void execute(const nao_interaction_msgs::NavigateToGoalConstPtr& req);
 
 private:
-  NavigateToActionServer *navigate_to_in_map_server_;
+  NavigateToActionServer *navigate_to_server_;
 };
 
 } // server
