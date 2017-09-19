@@ -167,6 +167,7 @@ void SetExternalCollisionService::reset(ros::NodeHandle& nh)
 bool SetExternalCollisionService::callback(nao_interaction_msgs::SetExternalCollisionRequest& req,
                                            nao_interaction_msgs::SetExternalCollisionResponse& resp)
 {
+  bool res(false);
   if(req.group_name.compare("All") == 0
           || req.group_name.compare("Move") == 0
           || req.group_name.compare("Arms") == 0
@@ -176,6 +177,7 @@ bool SetExternalCollisionService::callback(nao_interaction_msgs::SetExternalColl
     try
     {
       p_motion_.call<void>(func_, req.group_name, req.enable);
+      res = true;
     }
     catch (const std::exception& e)
     {
@@ -187,9 +189,9 @@ bool SetExternalCollisionService::callback(nao_interaction_msgs::SetExternalColl
   {
     ROS_ERROR_STREAM("SetExternalCollisionService: unknown group_name '"
                      << req.group_name << "'");
-    return false;
   }
-  return true;
+  resp.result = res;
+  return res;
 }
 
 }
