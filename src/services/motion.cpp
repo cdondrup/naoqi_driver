@@ -194,5 +194,28 @@ bool SetExternalCollisionService::callback(nao_interaction_msgs::SetExternalColl
   return res;
 }
 
+void SetMoveArmsEnabledService::reset(ros::NodeHandle& nh)
+{
+  service_ = nh.advertiseService(topic_, &SetMoveArmsEnabledService::callback, this);
+}
+
+bool SetMoveArmsEnabledService::callback(nao_interaction_msgs::SetMoveArmsEnabledRequest& req,
+                                         nao_interaction_msgs::SetMoveArmsEnabledResponse& resp)
+{
+  bool res(false);
+  try
+  {
+    p_motion_.call<void>(func_, req.left_arm, req.right_arm);
+    res = true;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALMotion." << func_ << " : "
+              << e.what() << std::endl;
+  }
+  resp.result = res;
+  return res;
+}
+
 }
 }

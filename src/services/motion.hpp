@@ -26,9 +26,12 @@
 #include <ros/service_server.h>
 
 #include <std_srvs/Empty.h>
+
 #include <nao_interaction_msgs/SetBreathEnabled.h>
 #include <nao_interaction_msgs/GoToPose.h>
 #include <nao_interaction_msgs/SetExternalCollision.h>
+#include <nao_interaction_msgs/SetMoveArmsEnabled.h>
+
 #include <qi/session.hpp>
 #include <tf2_ros/buffer.h>
 
@@ -161,6 +164,23 @@ public:
 
   bool callback(nao_interaction_msgs::SetExternalCollisionRequest& req,
                 nao_interaction_msgs::SetExternalCollisionResponse& resp);
+
+};
+
+
+class SetMoveArmsEnabledService : public MotionService
+{
+public:
+  SetMoveArmsEnabledService(const std::string& name,
+                     const std::string& topic,
+                     const qi::SessionPtr& session):
+      MotionService(name, topic, session)
+  {}
+
+  void reset(ros::NodeHandle& nh);
+
+  bool callback(nao_interaction_msgs::SetMoveArmsEnabledRequest& req,
+                nao_interaction_msgs::SetMoveArmsEnabledResponse& resp);
 
 };
 
