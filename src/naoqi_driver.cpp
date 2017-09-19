@@ -1022,14 +1022,14 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::SetExternalCollisionService>("ALMotion-setExternalCollisionProtectionEnabled", "/naoqi_driver/motion/set_external_collision", sessionPtr_) );
   registerService( boost::make_shared<service::SetMoveArmsEnabledService>("ALMotion-setMoveArmsEnabled", "/naoqi_driver/motion/set_move_arms_enabled", sessionPtr_) );
   registerService( boost::make_shared<service::NavigateToService>("ALNavigation-navigateTo", "/naoqi_driver/navigation/navigate_to", sessionPtr_, tf2_buffer_) );
-  registerService( boost::make_shared<service::TextToSpeechSayService>("ALTextToSpeech-say", "/naoqi_driver/tts/say", sessionPtr_) );
-  registerService( boost::make_shared<service::AnimatedSpeechSayService>("ALAnimatedSpeech-say", "/naoqi_driver/animated_speech/say", sessionPtr_) );
-  registerService( boost::make_shared<service::RobotPostureEmptyService>("ALRobotPosture-stopMove", "/naoqi_driver/robot_posture/stop_all", sessionPtr_) );
-  registerService( boost::make_shared<service::RobotPostureGoToService>("ALRobotPosture-goToPosture", "/naoqi_driver/robot_posture/go_to_posture", sessionPtr_) );
   registerService( boost::make_shared<service::ExploreService>("ALNavigation-explore", "/naoqi_driver/navigation/explore", sessionPtr_) );
   registerService( boost::make_shared<service::LoadExplorationService>("ALNavigation-loadExploration", "/naoqi_driver/navigation/load_exploration", sessionPtr_) );
   registerService( boost::make_shared<service::RelocalizeInMapService>("ALNavigation-relocalizeInMap", "/naoqi_driver/navigation/relocalize_in_map", sessionPtr_, tf2_buffer_) );
   registerService( boost::make_shared<service::GetRobotPositionInMapService>("ALNavigation-GetRobotPositionInMap", "/naoqi_driver/navigation/get_robot_position_in_map", sessionPtr_) );
+  registerService( boost::make_shared<service::TextToSpeechSayService>("ALTextToSpeech-say", "/naoqi_driver/tts/say", sessionPtr_) );
+  registerService( boost::make_shared<service::AnimatedSpeechSayService>("ALAnimatedSpeech-say", "/naoqi_driver/animated_speech/say", sessionPtr_) );
+  registerService( boost::make_shared<service::RobotPostureEmptyService>("ALRobotPosture-stopMove", "/naoqi_driver/robot_posture/stop_all", sessionPtr_) );
+  registerService( boost::make_shared<service::RobotPostureGoToService>("ALRobotPosture-goToPosture", "/naoqi_driver/robot_posture/go_to_posture", sessionPtr_) );
   registerService( boost::make_shared<service::RechargeAsyncService>("ALRecharge-goToStation", "/naoqi_driver/recharge/go_to_station", sessionPtr_) );
   registerService( boost::make_shared<service::RechargeSyncService>("ALRecharge-leaveStation", "/naoqi_driver/recharge/leave_station", sessionPtr_) );
   registerService( boost::make_shared<service::RechargeReturnPoseService>("ALRecharge-lookForStation", "/naoqi_driver/recharge/look_for_station", sessionPtr_) );
