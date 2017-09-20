@@ -64,7 +64,7 @@ public:
   /**
   * @brief Descructor for server
   */
-  ~NavigationServer()
+  virtual ~NavigationServer()
   {}
 
 /**
@@ -203,6 +203,7 @@ public:
 
   ~NavigateToServer()
   {
+    navigate_to_server_->shutdown();
     if(navigate_to_server_ != NULL)
       delete navigate_to_server_;
   }

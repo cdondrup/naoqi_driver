@@ -47,7 +47,7 @@ public:
                         const std::string& topic,
                         const qi::SessionPtr& session);
   ~NavigateToSubscriber(){
-    spin_thread_->join();
+    navigate_client_->cancelAllGoals();
   }
 
   void reset( ros::NodeHandle& nh );

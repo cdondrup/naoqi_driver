@@ -188,6 +188,7 @@ void Driver::stopService() {
   converters_.clear();
   subscribers_.clear();
   event_map_.clear();
+  servers_.clear();
 }
 
 
