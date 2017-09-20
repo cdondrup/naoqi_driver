@@ -60,9 +60,9 @@ void NavigateToSubscriber::callback( const geometry_msgs::PoseStampedConstPtr& p
     if (navigate_client_->getState() != actionlib::SimpleClientGoalState::LOST)
     {
       navigate_client_->stopTrackingGoal();
-      navigate_client_->cancelAllGoals();
       ROS_DEBUG_STREAM(name_ << "client stopped tracking the goal.");
     }
+  navigate_client_->cancelAllGoals();
 
   nao_interaction_msgs::NavigateToGoal goal;
   goal.target_pose = *pose_msg;
