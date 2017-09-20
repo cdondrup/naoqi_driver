@@ -47,7 +47,6 @@ public:
                         const std::string& topic,
                         const qi::SessionPtr& session);
   ~NavigateToSubscriber(){
-    navigate_client_->cancelAllGoals();
   }
 
   void reset( ros::NodeHandle& nh );
