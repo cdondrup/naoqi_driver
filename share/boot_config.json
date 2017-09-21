@@ -109,6 +109,10 @@
     "people":
     {
       "enabled"       : true
+    },
+    "recharge":
+    {
+      "enabled"       : true
     }
   }
 }
