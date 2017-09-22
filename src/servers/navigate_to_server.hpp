@@ -156,9 +156,17 @@ protected:
   bool navigateInMap(const geometry_msgs::PoseStamped& pose);
 
 /**
+  * @brief navigates to the pose
+  * @param target pose
+  * @return boolean true if succeded, false if not
+  */
+  bool navigateTo(const geometry_msgs::PoseStamped& pose);
+
+/**
   * @brief stops navigating
   */
   void stopNavigateTo();
+
 /**
   * @brief move to the pose
   * @param x position
@@ -178,7 +186,6 @@ protected:
 
 /**
   * @brief get yaw from the current pose and target pose
-  *
   * @param current pose
   * @param target pose
   * @return yaw

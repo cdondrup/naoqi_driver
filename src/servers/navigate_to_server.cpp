@@ -156,6 +156,24 @@ bool NavigationServer::navigateInMap(const geometry_msgs::PoseStamped& pose)
   return res;
 }
 
+bool NavigationServer::navigateTo(const geometry_msgs::PoseStamped& pose)
+{
+  bool res(false);
+  if (pose.header.frame_id == "base_footprint")
+  {
+    res = navigateInBaseFootprint(pose);
+  }
+  else if (pose.header.frame_id == "map")
+  {
+    res = navigateInMap(pose);
+  }
+  else
+  {
+    res = navigateInAnyFrame(pose);
+  }
+  return res;
+}
+
 void NavigationServer::stopNavigateTo()
 {
   try
@@ -305,27 +323,16 @@ void NavigateToServer::execute(const nao_interaction_msgs::NavigateToGoalConstPt
   }
 
   //NavigateTo
-  if (goal->target_pose.header.frame_id == "base_footprint")
-  {
-    res = navigateInBaseFootprint(goal->target_pose);
-  }
-  else if (goal->target_pose.header.frame_id == "map")
-  {
-    res = navigateInMap(goal->target_pose);
-  }
-  else
-  {
-    res = navigateInAnyFrame(goal->target_pose);
-  }
+  res = navigateTo(goal_pose);
 
   //get the current robot position in the map
   geometry_msgs::PoseStamped pose_current = getRobotPositionInMap();
   result.base_position = pose_current;
 
   //apply orientation if needed
-  if ((goal->target_pose.header.frame_id == "map") && res)
+  if ((goal_pose.header.frame_id == "map") && res)
   {
-    float yaw = getYaw(pose_current, goal->target_pose);
+    float yaw = getYaw(pose_current, goal_pose);
     moveTo(0, 0, yaw);
   }
 
