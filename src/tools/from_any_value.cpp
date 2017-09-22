@@ -557,6 +557,9 @@ NaoqiFaceInfo fromAnyValueToFaceInfo(qi::AnyReference& anyrefs, NaoqiFaceInfo& r
   qi::AnyReference ref;
   std::ostringstream ss;
 
+  if (anyrefs.size() < 2)
+    return result;
+
   /* ShapeInfo */
   ref = anyrefs[0].content();
   result.shape_info = fromAnyValueToShapeInfo(ref, result.shape_info);
@@ -829,15 +832,16 @@ std::vector < std::vector<float> > fromAnyValueToFloatVectorVector(qi::AnyValue&
 std::vector<float> fromAnyValueToFloatVector(qi::AnyValue& value, std::vector<float>& result){
   qi::AnyReferenceVector anyrefs = value.asListValuePtr();
 
+  result.resize(anyrefs.size());
   for(int i=0; i<anyrefs.size();i++)
   {
     try
     {
-      result.push_back(anyrefs[i].content().toFloat());
+      result[i] = anyrefs[i].content().toFloat();
     }
     catch(std::runtime_error& e)
     {
-      result.push_back(-1.0);
+      result[i] = -1.0f;
       std::cout << e.what() << "=> set to -1" << std::endl;
     }
   }
@@ -847,15 +851,16 @@ std::vector<float> fromAnyValueToFloatVector(qi::AnyValue& value, std::vector<fl
 std::vector<std::string> fromAnyValueToStringVector(qi::AnyValue& value, std::vector<std::string>& result){
   qi::AnyReferenceVector anyrefs = value.asListValuePtr();
 
+  result.resize(anyrefs.size());
   for(int i=0; i<anyrefs.size();i++)
   {
     try
     {
-      result.push_back(anyrefs[i].content().toString());
+      result[i] = anyrefs[i].content().toString();
     }
     catch(std::runtime_error& e)
     {
-      result.push_back("Not available");
+      result[i] = "Not available";
       std::cout << e.what() << " => set to 'Not available'" << std::endl;
     }
   }
