@@ -192,6 +192,15 @@ protected:
   */
   float getYaw(const geometry_msgs::PoseStamped& pose_current,
                const geometry_msgs::PoseStamped& pose_target);
+
+  /**
+    * @brief get distance from one pose and another
+    * @param first pose
+    * @param second pose
+    * @return distance
+    */
+  float getDistance(const geometry_msgs::PoseStamped& pose_current,
+                    const geometry_msgs::PoseStamped& pose_target);
 };
 
 /**

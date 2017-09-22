@@ -66,6 +66,8 @@ void NavigateToSubscriber::callback( const geometry_msgs::PoseStampedConstPtr& p
 
   nao_interaction_msgs::NavigateToGoal goal;
   goal.target_pose = *pose_msg;
+  goal.dist_threshold = 0.3;
+  goal.nb_attempts = 3;
   navigate_client_->sendGoal(goal);
   initialized_ = true;
 

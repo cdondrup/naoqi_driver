@@ -284,6 +284,18 @@ float NavigationServer::getYaw(const geometry_msgs::PoseStamped& pose_current,
   return yaw;
 }
 
+float NavigationServer::getDistance(const geometry_msgs::PoseStamped& pose1,
+                                    const geometry_msgs::PoseStamped& pose2)
+{
+  float res(0.0f);
+
+  res = std::sqrt((pose1.pose.position.x - pose2.pose.position.x)
+                  * (pose1.pose.position.x - pose2.pose.position.x)
+                  + (pose1.pose.position.y - pose2.pose.position.y)
+                  * (pose1.pose.position.y - pose2.pose.position.y));
+  return res;
+}
+
 void NavigateToServer::reset( ros::NodeHandle& nh )
 {
   navigate_to_server_ = new NavigateToActionServer(nh,
@@ -300,6 +312,7 @@ void NavigateToServer::execute(const nao_interaction_msgs::NavigateToGoalConstPt
   bool res(false);
   geometry_msgs::PoseStamped goal_pose(goal->target_pose);
   nao_interaction_msgs::NavigateToResult result;
+  nao_interaction_msgs::NavigateToFeedback feedback;
 
   if(navigate_to_server_->isPreemptRequested())
   {
@@ -327,6 +340,18 @@ void NavigateToServer::execute(const nao_interaction_msgs::NavigateToGoalConstPt
 
   //get the current robot position in the map
   geometry_msgs::PoseStamped pose_current = getRobotPositionInMap();
+
+  //aproach if needed
+  int attempts(0);
+  while ((getDistance(pose_current, goal_pose) > goal->dist_threshold)
+         && (attempts < goal->nb_attempts))
+  {
+    res = navigateTo(goal_pose);
+    pose_current = getRobotPositionInMap();
+    feedback.base_position = pose_current;
+    ++attempts;
+  }
+
   result.base_position = pose_current;
 
   //apply orientation if needed
