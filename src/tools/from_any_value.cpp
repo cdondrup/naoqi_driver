@@ -808,15 +808,16 @@ std::vector < std::vector<float> > fromAnyValueToFloatVectorVector(qi::AnyValue&
       return result;
     }
 
+    result[i].resize(anyref.size());
     for(int j=0; j<anyref.size(); j++)
     {
       try
       {
-        result[i].push_back(anyref[j].content().toFloat());
+        result[i][j] = anyref[j].content().toFloat();
       }
       catch(std::runtime_error& e)
       {
-        result[i].push_back(-1.0);
+        result[i][j] = -1.0f;
         std::cout << e.what() << "=> set to -1" << std::endl;
       }
     }
