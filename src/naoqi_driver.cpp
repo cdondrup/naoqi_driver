@@ -44,6 +44,7 @@
 #include "converters/odom.hpp"
 #include "converters/sound.hpp"
 #include "converters/recharge.hpp"
+#include "converters/charging_station.hpp"
 
 /*
  * PUBLISHERS
@@ -622,7 +623,9 @@ void Driver::registerDefaultConverter()
 
   bool face_enabled                   = boot_config_.get( "converters.face.enabled", true);
   bool people_enabled                 = boot_config_.get( "converters.people.enabled", true);
+
   bool recharge_status_enabled        = boot_config_.get( "converters.recharge.enabled", true);
+  bool pod_enabled                    = boot_config_.get( "converters.recharge.station_enabled", true);
   /*
    * The info converter will be called once after it was added to the priority queue. Once it is its turn to be called, its
    * callAll method will be triggered (because InfoPublisher is considered to always have subscribers, isSubscribed always
@@ -921,6 +924,18 @@ void Driver::registerDefaultConverter()
     if (publish_enabled_) {
       event_map_.find("recharge_status")->second.isPublishing(true);
     }
+  }
+
+  /** CHARGING STATION **/
+  if ( pod_enabled )
+  {
+    boost::shared_ptr<publisher::BasicPublisher<geometry_msgs::PoseStamped> > csp = boost::make_shared<publisher::BasicPublisher<geometry_msgs::PoseStamped> >( "recharge/station_pose" );
+    boost::shared_ptr<recorder::BasicRecorder<geometry_msgs::PoseStamped> > csr = boost::make_shared<recorder::BasicRecorder<geometry_msgs::PoseStamped> >( "recharge/station_pose" );
+    boost::shared_ptr<converter::PodConverter> csc = boost::make_shared<converter::PodConverter>( "pod", 2, sessionPtr_ );
+    csc->registerCallback( message_actions::PUBLISH, boost::bind(&publisher::BasicPublisher<geometry_msgs::PoseStamped>::publish, csp, _1) );
+    csc->registerCallback( message_actions::RECORD, boost::bind(&recorder::BasicRecorder<geometry_msgs::PoseStamped>::write, csr, _1) );
+    csc->registerCallback( message_actions::LOG, boost::bind(&recorder::BasicRecorder<geometry_msgs::PoseStamped>::bufferize, csr, _1) );
+    registerConverter( csc, csp, csr );
   }
   
   /** PEOPLE **/

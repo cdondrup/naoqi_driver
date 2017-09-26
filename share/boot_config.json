@@ -112,7 +112,8 @@
     },
     "recharge":
     {
-      "enabled"       : true
+      "enabled"       : true,
+      "station_enabled" : true
     }
   }
 }

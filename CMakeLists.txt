@@ -24,6 +24,7 @@ set(
   src/converters/odom.cpp
   src/converters/sound.cpp
   src/converters/recharge.cpp
+  src/converters/charging_station.cpp
   )
 set(
   TOOLS_SRC
