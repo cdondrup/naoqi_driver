@@ -84,5 +84,5 @@ void MovetoSubscriber::callback( const geometry_msgs::PoseStampedConstPtr& pose_
   }
 }
 
-} //publisher
+} //subscriber
 } // naoqi

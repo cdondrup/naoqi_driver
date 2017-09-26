@@ -101,5 +101,5 @@ void SonarRecorder::setBufferDuration(float duration)
   buffer_.set_capacity(buffer_size_);
 }
 
-} //publisher
+} //recorder
 } // naoqi

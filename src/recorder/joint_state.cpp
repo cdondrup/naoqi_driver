@@ -110,5 +110,5 @@ void JointStateRecorder::setBufferDuration(float duration)
   bufferTF_.set_capacity(buffer_size_);
 }
 
-} //publisher
+} //recorder
 } // naoqi
