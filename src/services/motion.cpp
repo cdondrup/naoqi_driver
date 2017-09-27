@@ -217,5 +217,100 @@ bool SetMoveArmsEnabledService::callback(nao_interaction_msgs::SetMoveArmsEnable
   return res;
 }
 
+void FollowPathService::reset(ros::NodeHandle& nh)
+{
+  service_ = nh.advertiseService(topic_, &FollowPathService::callback, this);
+}
+
+bool FollowPathService::callback(nao_interaction_msgs::FollowPathRequest& req,
+                                 nao_interaction_msgs::FollowPathResponse& resp)
+{
+  bool res(false);
+  ROS_INFO_STREAM("Service " << name_ << " is running");
+
+  int size(req.type.size());
+  if ((size != req.init_dir_x.size())
+          || (size != req.init_dir_y.size())
+          || (size != req.init_cur.size())
+          || (size != req.goal_x.size())
+          || (size != req.goal_y.size())
+          || (size != req.fin_dir_x.size())
+          || (size != req.fin_dir_y.size())
+          || (size != req.fin_cur.size()))
+  {
+    ROS_ERROR("The FollowPath trajectory is not correctly defined.");
+    return false;
+  }
+
+  qi::AnyValue traj_final;
+
+  std::vector<qi::AnyValue> init_dir(2);
+  std::vector<qi::AnyValue> goal(2);
+  std::vector<qi::AnyValue> fin_dir(2);
+
+  try
+  {
+    std::vector<qi::AnyValue> traj_composed;
+    int traj_nb(0);
+    if (req.type.size() > 1)
+    {
+      traj_composed.resize(req.type.size()+1);
+      traj_composed[traj_nb++] = qi::AnyValue(qi::AnyReference::from("Composed"), false, false);
+    }
+    else
+      traj_composed.resize(1);
+
+    for(int i=0; i<req.type.size(); ++i)
+    {
+      int elem(0);
+      std::vector<qi::AnyValue> traj_v;
+      traj_v.resize(6);
+
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.type[i]), false, false);
+
+      init_dir[0] = qi::AnyValue(qi::AnyReference::from(req.init_dir_x[i]), false, false);
+      init_dir[1] = qi::AnyValue(qi::AnyReference::from(req.init_dir_y[i]), false, false);
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(init_dir), false, false);
+
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.init_cur[i]), false, false);
+
+      goal[0] = qi::AnyValue(qi::AnyReference::from(req.goal_x[i]), false, false);
+      goal[1] = qi::AnyValue(qi::AnyReference::from(req.goal_y[i]), false, false);
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(goal), false, false);
+
+      fin_dir[0] = qi::AnyValue(qi::AnyReference::from(req.fin_dir_x[i]), false, false);
+      fin_dir[1] = qi::AnyValue(qi::AnyReference::from(req.fin_dir_y[i]), false, false);
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(fin_dir), false, false);
+
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.fin_cur[i]), false, false);
+
+      traj_composed[traj_nb++] = qi::AnyValue(qi::AnyReference::from(traj_v), false, false);
+    }
+    if (req.type.size() > 1)
+      traj_final = qi::AnyValue(qi::AnyReference::from(traj_composed), false, false);
+    else
+      traj_final = traj_composed.back();
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in conversion to AnyValue : "
+              << e.what() << std::endl;
+    return false;
+  }
+
+  try
+  {
+    p_motion_.call<void>("_followPath", traj_final);
+    res = true;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Exception caught in ALMotion." << func_ << " : "
+              << e.what() << std::endl;
+    return false;
+  }
+  return res;
+}
+
 }
 }

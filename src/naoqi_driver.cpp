@@ -1037,6 +1037,7 @@ void Driver::registerDefaultServices()
   registerService( boost::make_shared<service::MoveToService>("ALMotion-moveTo", "/naoqi_driver/motion/move_to", sessionPtr_, tf2_buffer_) );
   registerService( boost::make_shared<service::SetExternalCollisionService>("ALMotion-setExternalCollisionProtectionEnabled", "/naoqi_driver/motion/set_external_collision", sessionPtr_) );
   registerService( boost::make_shared<service::SetMoveArmsEnabledService>("ALMotion-setMoveArmsEnabled", "/naoqi_driver/motion/set_move_arms_enabled", sessionPtr_) );
+  registerService( boost::make_shared<service::FollowPathService>("ALMotion-followPath", "/naoqi_driver/motion/follow_path", sessionPtr_) );
   registerService( boost::make_shared<service::NavigateToService>("ALNavigation-navigateTo", "/naoqi_driver/navigation/navigate_to", sessionPtr_, tf2_buffer_) );
   registerService( boost::make_shared<service::ExploreService>("ALNavigation-explore", "/naoqi_driver/navigation/explore", sessionPtr_) );
   registerService( boost::make_shared<service::LoadExplorationService>("ALNavigation-loadExploration", "/naoqi_driver/navigation/load_exploration", sessionPtr_) );

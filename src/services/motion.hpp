@@ -31,6 +31,7 @@
 #include <nao_interaction_msgs/GoToPose.h>
 #include <nao_interaction_msgs/SetExternalCollision.h>
 #include <nao_interaction_msgs/SetMoveArmsEnabled.h>
+#include <nao_interaction_msgs/FollowPath.h>
 
 #include <qi/session.hpp>
 #include <tf2_ros/buffer.h>
@@ -172,8 +173,8 @@ class SetMoveArmsEnabledService : public MotionService
 {
 public:
   SetMoveArmsEnabledService(const std::string& name,
-                     const std::string& topic,
-                     const qi::SessionPtr& session):
+                            const std::string& topic,
+                            const qi::SessionPtr& session):
       MotionService(name, topic, session)
   {}
 
@@ -181,6 +182,22 @@ public:
 
   bool callback(nao_interaction_msgs::SetMoveArmsEnabledRequest& req,
                 nao_interaction_msgs::SetMoveArmsEnabledResponse& resp);
+
+};
+
+class FollowPathService : public MotionService
+{
+public:
+  FollowPathService(const std::string& name,
+                    const std::string& topic,
+                    const qi::SessionPtr& session):
+      MotionService(name, topic, session)
+  {}
+
+  void reset(ros::NodeHandle& nh);
+
+  bool callback(nao_interaction_msgs::FollowPathRequest& req,
+                nao_interaction_msgs::FollowPathResponse& resp);
 
 };
 
