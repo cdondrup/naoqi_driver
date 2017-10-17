@@ -228,15 +228,7 @@ bool FollowPathService::callback(nao_interaction_msgs::FollowPathRequest& req,
   bool res(false);
   ROS_INFO_STREAM("Service " << name_ << " is running");
 
-  int size(req.type.size());
-  if ((size != req.init_dir_x.size())
-          || (size != req.init_dir_y.size())
-          || (size != req.init_cur.size())
-          || (size != req.goal_x.size())
-          || (size != req.goal_y.size())
-          || (size != req.fin_dir_x.size())
-          || (size != req.fin_dir_y.size())
-          || (size != req.fin_cur.size()))
+  if (req.path_array.size() <= 0)
   {
     ROS_ERROR("The FollowPath trajectory is not correctly defined.");
     return false;
@@ -252,41 +244,42 @@ bool FollowPathService::callback(nao_interaction_msgs::FollowPathRequest& req,
   {
     std::vector<qi::AnyValue> traj_composed;
     int traj_nb(0);
-    if (req.type.size() > 1)
+    if (req.path_array.size() > 1)
     {
-      traj_composed.resize(req.type.size()+1);
+      traj_composed.resize(req.path_array.size()+1);
       traj_composed[traj_nb++] = qi::AnyValue(qi::AnyReference::from("Composed"), false, false);
     }
     else
       traj_composed.resize(1);
 
-    for(int i=0; i<req.type.size(); ++i)
+    for(int i=0; i<req.path_array.size(); ++i)
     {
       int elem(0);
       std::vector<qi::AnyValue> traj_v;
       traj_v.resize(6);
 
-      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.type[i]), false, false);
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].type), false, false);
 
-      init_dir[0] = qi::AnyValue(qi::AnyReference::from(req.init_dir_x[i]), false, false);
-      init_dir[1] = qi::AnyValue(qi::AnyReference::from(req.init_dir_y[i]), false, false);
+      init_dir[0] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].init_dir_x), false, false);
+      init_dir[1] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].init_dir_y), false, false);
       traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(init_dir), false, false);
 
-      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.init_cur[i]), false, false);
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].init_cur), false, false);
 
-      goal[0] = qi::AnyValue(qi::AnyReference::from(req.goal_x[i]), false, false);
-      goal[1] = qi::AnyValue(qi::AnyReference::from(req.goal_y[i]), false, false);
+      goal[0] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].goal_x), false, false);
+      goal[1] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].goal_y), false, false);
       traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(goal), false, false);
 
-      fin_dir[0] = qi::AnyValue(qi::AnyReference::from(req.fin_dir_x[i]), false, false);
-      fin_dir[1] = qi::AnyValue(qi::AnyReference::from(req.fin_dir_y[i]), false, false);
+      fin_dir[0] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].fin_dir_x), false, false);
+      fin_dir[1] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].fin_dir_y), false, false);
       traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(fin_dir), false, false);
 
-      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.fin_cur[i]), false, false);
+      traj_v[elem++] = qi::AnyValue(qi::AnyReference::from(req.path_array[i].fin_cur), false, false);
 
       traj_composed[traj_nb++] = qi::AnyValue(qi::AnyReference::from(traj_v), false, false);
     }
-    if (req.type.size() > 1)
+
+    if (req.path_array.size() > 1)
       traj_final = qi::AnyValue(qi::AnyReference::from(traj_composed), false, false);
     else
       traj_final = traj_composed.back();
