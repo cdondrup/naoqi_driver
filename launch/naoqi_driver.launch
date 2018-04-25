@@ -4,7 +4,13 @@
   <arg name="nao_port"          default="$(optenv NAO_PORT 9559)" />
   <arg name="roscore_ip"        default="127.0.0.1" />
   <arg name="network_interface" default="eth0" />
+  <arg name="super_ns"          default="/naoqi_driver" />
 
   <node pkg="naoqi_driver" type="naoqi_driver_node" name="naoqi_driver" args="--qi-url=tcp://$(arg nao_ip):$(arg nao_port) --roscore_ip=$(arg roscore_ip) --network_interface=$(arg network_interface)" output="screen" respawn="true"/>
+  <node pkg="naoqi_driver_services" type="naoqi_driver_services_node.py" name="naoqi_driver_service_node" output="screen" respawn="true">
+    <param name="nao_ip" type="string" value="$(arg nao_ip)"/>
+    <param name="nao_port" type="int" value="$(arg nao_port)"/>
+    <param name="super_ns" type="string" value="$(arg super_ns)"/>
+  </node>
 
 </launch>

@@ -30,7 +30,10 @@ void TextToSpeechSayService::reset( ros::NodeHandle& nh )
 
 bool TextToSpeechSayService::callback(nao_interaction_msgs::SayRequest& req, nao_interaction_msgs::SayResponse& resp)
 {
-  p_tts_.call<void>(func_, req.text);
+  qi::Future<void> f = p_tts_.async<void>(func_, req.text);
+  while(f.isRunning()) {
+      ros::spinOnce();
+  }
   return true;
 }
 
