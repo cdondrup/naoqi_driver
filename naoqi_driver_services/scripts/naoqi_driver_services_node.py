@@ -9,6 +9,7 @@ from naoqi_driver_service_classes.animated_speech_services import AnimatedSpeech
 from naoqi_driver_service_classes.motion_services import MotionServices
 from naoqi_driver_service_classes.behaviour_manager_services import BehaviourManagerServices
 from naoqi_driver_service_classes.tracker_services import TrackerServices
+from naoqi_driver_service_classes.tablet_services import TabletServices
 
 
 class ServicesNode(object):
@@ -20,6 +21,7 @@ class ServicesNode(object):
         MotionServices(super_ns)
         BehaviourManagerServices(super_ns)
         TrackerServices(super_ns)
+        TabletServices(super_ns)
         rospy.loginfo("... done")
 
 if __name__ == "__main__":
